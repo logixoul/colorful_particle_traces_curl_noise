@@ -26,29 +26,48 @@ bool mouseDown_[3];
 bool keys[256];
 gl::Texture::Format gtexfmt;
 float noiseTimeDim = 0.0f;
+const int MAX_AGE = 100;
 
 float mouseX, mouseY;
 bool pause;
 bool keys2[256];
 
+Vec3f complexToColor(Vec2f comp) {
+	float hue = (float)M_PI+(float)atan2(comp.y,comp.x);
+	hue /= (float)(2*M_PI);
+	float lightness = comp.length();
+	//lightness /= lightness + 1.0f;
+	HslF hsl(hue, 1.0f, lightness);
+ 	return FromHSL(hsl);
+}
+	
 struct Walker {
 	Vec2f pos;
-	Vec2f vel;
+	int age;
+	Vec3f color;
 
 	Walker() {
 		pos = Vec2f(ci::randFloat(0, wsx), ci::randFloat(0, wsy));
-		vel = Vec2f::zero();
+		age = ci::randInt(0, MAX_AGE);
 	}
 
 	void update() {
-		float speed = .1f;
-		vel += ci::randVec2f()*speed;
-		pos += vel;
-		//pos += Vec2f::one() * .001f;
+		auto& p = pos;
+		int numDetailsX = 5;
+		float nscale = numDetailsX / (float)wsx;
+		Vec2f toAdd;
+		toAdd.x = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale, noiseTimeDim);
+		toAdd.y = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale + numDetailsX, noiseTimeDim);
+		toAdd.y -= .5f;
+		pos += toAdd;
+		color = complexToColor(toAdd);
+
 		if(pos.x < 0) pos.x += wsx;
 		if(pos.y < 0) pos.y += wsy;
 		pos.x = fmod(pos.x, wsx);
 		pos.y = fmod(pos.y, wsy);
+
+		age++;
 	}
 };
 
@@ -132,7 +151,7 @@ struct SApp : AppBasic {
 		return I - N * N.dot(I) * 2.0f;
 	}
 	float noiseProgressSpeed;
-	float displaceAmt;
+	
 	void draw()
 	{
 		my_console::beginFrame();
@@ -145,12 +164,9 @@ struct SApp : AppBasic {
 
 		mouseX = getMousePos().x / (float)wsx;
 		mouseY = getMousePos().y / (float)wsy;
-		noiseProgressSpeed=cfg1::getOpt("noiseProgressSpeed", .008f,
+		noiseProgressSpeed=cfg1::getOpt("noiseProgressSpeed", .00008f,
 			[&]() { return keys['s']; },
 			[&]() { return expRange(mouseY, 0.01f, 100.0f); });
-		displaceAmt=cfg1::getOpt("displaceAmt", 1.0f,
-			[&]() { return keys['d']; },
-			[&]() { return niceExpRangeY(mouseY, 1.0f, 10000.0f); });
 		
 		gl::clear(Color(0, 0, 0));
 
@@ -166,38 +182,8 @@ struct SApp : AppBasic {
 		if(pause)
 			Sleep(50);
 	}
-	Vec3f complexToColor(Vec2f comp) {
-		float hue = (float)M_PI+(float)atan2(comp.y,comp.x);
-		hue /= (float)(2*M_PI);
-		float lightness = comp.length();
-		//lightness /= lightness + 1.0f;
-		HslF hsl(hue, 1.0f, lightness);
- 		return FromHSL(hsl);
-	}
-	Array2D<Vec3f> diskBorder76Convolve(Array2D<Vec3f> in) {
-		Array2D<float> sdKernel(in.Size());
-		forxy(sdKernel) {
-			auto p2=p;if(p2.x>sdKernel.w/2)p2.x-=sdKernel.w;if(p2.y>sdKernel.h/2)p2.y-=sdKernel.h;
-			const float r=76 / (float)scale;
-			sdKernel(p)=4*(1.0-smoothstep(r, r+1, p2.length()));
-			sdKernel(p)-=3*(1.0-smoothstep(r-1, r, p2.length()));
-		}
-		auto kernelInvSum = 1.0/(std::accumulate(sdKernel.begin(), sdKernel.end(), 0.0f));
-		forxy(sdKernel) { sdKernel(p) *= kernelInvSum; }
-	}
 	void updateIt() {
 		Array2D<Vec3f> result(sx, sy);
-		Vec2f center = (Vec2f)result.Size() / 2.0f;
-		forxy(result) {
-			auto pf = (Vec2f)p;
-			int numDetailsX = 5;
-			float nscale = numDetailsX / (float)result.w;
-			Vec2f comp; // complex
-			comp.x = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale, noiseTimeDim);
-			comp.y = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale + numDetailsX, noiseTimeDim);
-			result(p) = complexToColor(comp);
-		}
-		//result = diskBorder76Convolve(result);
 		img = result;
 
 		if(!pause) {
@@ -205,23 +191,28 @@ struct SApp : AppBasic {
 
 			foreach(Walker& walker, walkers) {
 				walker.update();
+				if(walker.age > MAX_AGE) {
+					walker = Walker();
+				}
 			}
 		}
 	}
 	void renderIt() {
 		auto tex = gtex(img);
-		auto walkerTex = Shade().tex(tex).expr("vec3(1.0);").scale(::scale).run();
-
+		static auto walkerTex = Shade().tex(tex).expr("vec3(0.0);").scale(::scale).run();
+		walkerTex = Shade().tex(walkerTex).expr("fetch3()*.99;").run();
+		glPointSize(2);
 		glPushAttrib(GL_ALL_ATTRIB_BITS);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 		{
 			glUseProgram(0);
 			beginRTT(walkerTex);
 			{
-				glColor4f(10.0, 10.0, 10.0, 1.0);
 				glBegin(GL_POINTS);
 				{
 					foreach(Walker& walker, walkers) {
+						auto& c = walker.color;
+						glColor4f(c.x, c.y, c.z, min((walker.age/MAX_AGE)*5.0, 1.0));
 						glVertex2f(walker.pos);
 					}
 				}
@@ -231,17 +222,9 @@ struct SApp : AppBasic {
 		}
 		glPopAttrib();
 
-		walkerTex = gpuBlur2_4::run_longtail(walkerTex, 3, 1.0);
+		//walkerTex = gpuBlur2_4::run_longtail(walkerTex, 3, 1.0);
 
-		if(0)tex = Shade().scale(::scale).tex(tex).tex(walkerTex).src(
-			"void shade() {"
-			"vec3 c = fetch3();"
-			"vec3 cwalker = fetch3(tex2);"
-			"_out = c * cwalker * .7;"
-			//"_out = cwalker * .4;"
-			"}"
-			).run();
-		gl::draw(tex, getWindowBounds());
+		gl::draw(walkerTex, getWindowBounds());
 	}
 };
 
