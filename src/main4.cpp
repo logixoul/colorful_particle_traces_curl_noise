@@ -36,6 +36,7 @@ Vec3f complexToColor(Vec2f comp) {
 	float hue = (float)M_PI+(float)atan2(comp.y,comp.x);
 	hue /= (float)(2*M_PI);
 	float lightness = comp.length();
+	lightness = .5f;
 	//lightness /= lightness + 1.0f;
 	HslF hsl(hue, 1.0f, lightness);
  	return FromHSL(hsl);
@@ -45,22 +46,48 @@ struct Walker {
 	Vec2f pos;
 	int age;
 	Vec3f color;
+	Vec2f lastMove;
+
+	float alpha() {
+		return min((age/(float)MAX_AGE)*5.0, 1.0);
+	}
 
 	Walker() {
 		pos = Vec2f(ci::randFloat(0, wsx), ci::randFloat(0, wsy));
 		age = ci::randInt(0, MAX_AGE);
+		lastMove = Vec2f::zero();
 	}
-
-	void update() {
-		auto& p = pos;
+	float noiseXAt(Vec2f p) {
 		int numDetailsX = 5;
 		float nscale = numDetailsX / (float)wsx;
-		Vec2f toAdd;
-		toAdd.x = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale, noiseTimeDim);
-		toAdd.y = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale + numDetailsX, noiseTimeDim);
-		toAdd.y -= .5f;
+		float noiseX = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale, noiseTimeDim);
+		return noiseX;
+	}
+	
+	float noiseYAt(Vec2f p) {
+		int numDetailsX = 5;
+		float nscale = numDetailsX / (float)wsx;
+		float noiseY = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale + numDetailsX, noiseTimeDim);
+		return noiseY;
+	}
+	Vec2f noiseVec2fAt(Vec2f p) {
+		return Vec2f(noiseXAt(p), noiseYAt(p));
+	}
+	Vec2f curlNoiseVec2fAt(Vec2f p) {
+		float eps = 1;
+		float noiseXAbove = noiseXAt(p - Vec2f(0, eps));
+		float noiseXBelow = noiseXAt(p + Vec2f(0, eps));
+		float noiseYOnLeft = noiseYAt(p - Vec2f(eps, 0));
+		float noiseYOnRight = noiseYAt(p + Vec2f(eps, 0));
+		return Vec2f(noiseXBelow - noiseXAbove, -(noiseYOnRight - noiseYOnLeft)) / (2.0f * eps);
+	}
+	void update() {
+		Vec2f toAdd = curlNoiseVec2fAt(pos) * 50.0f;
+		//toAdd.y -= 1.0f;
 		pos += toAdd;
 		color = complexToColor(toAdd);
+		lastMove = toAdd;
+		//color = Vec3f::one();
 
 		if(pos.x < 0) pos.x += wsx;
 		if(pos.y < 0) pos.y += wsy;
@@ -200,27 +227,32 @@ struct SApp : AppBasic {
 	void renderIt() {
 		auto tex = gtex(img);
 		static auto walkerTex = Shade().tex(tex).expr("vec3(0.0);").scale(::scale).run();
-		walkerTex = Shade().tex(walkerTex).expr("fetch3()*.99;").run();
-		glPointSize(2);
-		glPushAttrib(GL_ALL_ATTRIB_BITS);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-		{
+		if(!pause) {
+			walkerTex = Shade().tex(walkerTex).expr("fetch3()*.99;").run();
+			glPushAttrib(GL_ALL_ATTRIB_BITS);
 			glUseProgram(0);
-			beginRTT(walkerTex);
+			glPointSize(2);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glEnable(GL_BLEND);
 			{
-				glBegin(GL_POINTS);
+				beginRTT(walkerTex);
 				{
-					foreach(Walker& walker, walkers) {
-						auto& c = walker.color;
-						glColor4f(c.x, c.y, c.z, min((walker.age/MAX_AGE)*5.0, 1.0));
-						glVertex2f(walker.pos);
+					glBegin(GL_POINTS);
+					{
+						foreach(Walker& walker, walkers) {
+							auto& c = walker.color;
+							glColor4f(c.x, c.y, c.z, walker.alpha());
+							glVertex2f(walker.pos);
+						}
 					}
+					glEnd();
 				}
-				glEnd();
+				endRTT();
 			}
-			endRTT();
+			glPopAttrib();
 		}
-		glPopAttrib();
+
+		//auto walkerTex2 = Shade().tex(walkerTex).expr("1.0-fetch3()").run();
 
 		//walkerTex = gpuBlur2_4::run_longtail(walkerTex, 3, 1.0);
 
