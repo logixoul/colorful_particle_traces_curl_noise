@@ -1,6 +1,7 @@
 #include "precompiled.h"
 #include "shade.h"
 #include "util.h"
+#include "my_console.h"
 
 void beginRTT(gl::Texture fbotex)
 {
@@ -35,7 +36,7 @@ string removeEndlines(string s)
 	return s2;
 }
 
-map<string, float> globaldict;
+std::map<string, float> globaldict;
 void globaldict_default(string s, float f) {
 	if(globaldict.find(s) == globaldict.end())
 	{
@@ -77,7 +78,6 @@ gl::Texture shade(vector<gl::Texture> texv, const char* fshader_constChar, Shade
 	{
 		uniformDeclarations += "uniform float " + p.first + ";\n";
 	}
-	//cout << "sampler2Ddeclarations: " << sampler2Ddeclarations << endl;
 	string intro =
 		Str()
 		<< "#version 130"
@@ -134,7 +134,7 @@ gl::Texture shade(vector<gl::Texture> texv, const char* fshader_constChar, Shade
 		<< "}";
 	string completeFshader = intro + fshader + outro;
 	string completeFshader_noEndlines = removeEndlines(intro) + fshader + outro;
-	static map<string, gl::GlslProg> shaders;
+	static std::map<string, gl::GlslProg> shaders;
 	gl::GlslProg shader;
 	if(shaders.find(completeFshader) == shaders.end())
 	{
@@ -151,7 +151,6 @@ gl::Texture shade(vector<gl::Texture> texv, const char* fshader_constChar, Shade
 				completeFshader/*_noEndlines*/.c_str()
 				);
 			shaders[completeFshader] = shader;
-			cout << "compiling" << endl;
 		} catch(gl::GlslProgCompileExc const& e) {
 			cout << "gl::GlslProgCompileExc: " << e.what() << endl;
 			cout << "source:" << endl;

@@ -102,6 +102,12 @@ struct Array2D
 	{
 		::copyCvtData(surface, *this);
 	}
+	
+	template<class TSrc>
+	Array2D(cv::Mat_<TSrc> const& mat) : deleter(nullptr)
+	{
+		Init(mat.cols, mat.rows, (T*)mat.data);
+	}
 
 	T* begin() { return data; }
 	T* end() { return data+w*h; }
@@ -151,12 +157,15 @@ private:
 		std::fill(begin(), end(), value);
 	}
 	T* Init(int w, int h) {
-		// so we can use fftw new-array execute functions
-		data = (T*)fftwf_malloc(w * h * sizeof(T)); // data = new T[w * h]
+		auto data = (T*)fftwf_malloc(w * h * sizeof(T)); // data = new T[w * h]
+		Init(w, h, data);
+		return data;
+	}
+	void Init(int w, int h, T* data) {
+		this->data = data;
 		area = w * h;
 		this->w = w;
 		this->h = h;
-		return data;
 	}
 };
 

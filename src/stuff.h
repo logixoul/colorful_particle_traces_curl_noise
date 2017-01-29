@@ -1,6 +1,7 @@
 #pragma once
 #include "precompiled.h"
 #include "util.h"
+#include "my_console.h"
 
 const GLenum hdrFormat = GL_RGBA16F;
 inline void gotoxy(int x, int y) { 
@@ -632,11 +633,12 @@ Vec2f gradient_i2(Array2D<T> src, Vec2i p)
 }
 
 inline void mm(Array2D<float> arr, string desc="") {
+	std::stringstream prepend;
 	if(desc!="") {
-		cout << "[" << desc << "] ";
+		 prepend << "[" << desc << "] ";
 	}
-	cout<<"min: " << *std::min_element(arr.begin(),arr.end()) << ", ";
-	cout<<"max: " << *std::max_element(arr.begin(),arr.end()) << endl;
+	qDebug()<<prepend.str()<<"min: " << *std::min_element(arr.begin(),arr.end()) << ", "
+		<<"max: " << *std::max_element(arr.begin(),arr.end());
 }
 //get_wrapZeros
 template<class T>
@@ -744,10 +746,11 @@ inline void checkGLError(string place)
 	GLenum errCode;
 	if ((errCode = glGetError()) != GL_NO_ERROR) 
 	{
-		cout<<"GL error "<<hex<<errCode<<dec<< " at " << place << endl;
+		qDebug()<<"GL error "<<hex<<errCode<<dec<< " at " << place;
 	}
-	else
-		cout << "NO error at " << place << endl;
+	else {
+		qDebug() << "NO error at " << place;
+	}
 }
 #define MY_STRINGIZE_DETAIL(x) #x
 #define MY_STRINGIZE(x) MY_STRINGIZE_DETAIL(x)
@@ -765,7 +768,7 @@ Array2D<T> gettexdata(gl::Texture tex, GLenum format, GLenum type, ci::Area area
 	GLenum errCode;
 	if ((errCode = glGetError()) != GL_NO_ERROR) 
 	{
-		cout<<"ERROR"<<errCode<<endl;
+		qDebug() <<"ERROR"<<errCode;
 	}
 	return data;
 }
@@ -879,7 +882,7 @@ struct denormal_check {
 		}
 	}
 	static void end_frame() {
-		cout << "denormals detected: " << num << endl;
+		qDebug() << "denormals detected: " << num;
 	}
 };
 

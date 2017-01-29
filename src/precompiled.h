@@ -14,6 +14,7 @@
 #include <cinder/Rand.h>
 #include <boost/foreach.hpp>
 #include <fftw3.h>
+#include <opencv2/imgproc.hpp>
 #include <numeric>
 #define foreach BOOST_FOREACH
 using namespace ci;

@@ -1,5 +1,6 @@
 #pragma once
 #include "precompiled.h"
+#include "my_console.h"
 
 class cfg1
 {
@@ -20,11 +21,11 @@ public:
 		return opt.val;
 	}
 	static void print() {
-		cout << "============ CFG values ============" << endl;
+		qDebug() << "============ CFG values ============";
 		foreach(auto& pair, opts) {
 			auto& key=pair.first;
 			auto opt = opts[key];
-			cout << opt.name << " = " << opt.val << endl;
+			qDebug() << opt.name << " = " << opt.val;
 		}
 	}
 private:

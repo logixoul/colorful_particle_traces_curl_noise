@@ -1,26 +1,31 @@
 #pragma once
-//#include "precompiled.h"
-#include "stuff.h"
+#include "precompiled.h"
 #include <strstream>
+
 class my_console {
 public:
-	static void beginFrame() {
-		//my_cout.str("");
-		my_cout = stringstream();
-		original_cout_rdbuf = cout.rdbuf(my_cout.rdbuf());
-		//cout.rdbuf(my_cout.rdbuf());
-	}
-	static void clr() {
-		clearconsole();
-		gotoxy(0, 0);
-	}
-	static void endFrame() {
-		cout.rdbuf(original_cout_rdbuf);
-		
-		cout << my_cout.str();
-		cout.flush();
+	static void beginFrame();
+	static void clr();
+	static void endFrame();
+	template<class T>
+	static void print(T value) {
+		myStream << value;
 	}
 private:
-	static stringstream my_cout;
-	static std::streambuf* original_cout_rdbuf;
+	static stringstream myStream;
 };
+
+class QDebug {
+public:
+	QDebug() { }
+	~QDebug() {
+		my_console::print('\n');
+	}
+};
+template<class T>
+QDebug& operator<<(QDebug& prev, T value) {
+	my_console::print(value);
+	return prev;
+}
+
+extern QDebug qDebug();

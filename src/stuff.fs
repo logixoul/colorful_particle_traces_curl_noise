@@ -2,6 +2,10 @@ float getL(vec3 c) {
 	vec3 w = vec3(.22, .71, .07);
 	return dot(w, c);
 }
+float getLPhotoshop(vec3 c) {
+	vec3 w = vec3(.30, .59, .11);
+	return dot(w, c);
+}
 float pi=3.14159265;
 vec3 hsv_to_rgb(float h, float s, float v)
 {

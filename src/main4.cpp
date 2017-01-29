@@ -13,16 +13,11 @@
 #include "simplexnoise.h"
 #include "mainfunc_impl.h"
 #include "colorspaces.h"
-#include "easyfft.h"
 
-typedef Array2D<Vec3f> Image;
 int wsx=800, wsy = 800 * (800.0f / 1280.0f);
-int scale = 4;
+int scale = 1;
 int sx = wsx / scale;
 int sy = wsy / scale;
-Image img(sx, sy);
-Array2D<float> whiteNoiseState(sx, sy, 0.0f);
-Array2D<Vec2f> velocity(sx, sy, Vec2f::zero());
 bool mouseDown_[3];
 bool keys[256];
 gl::Texture::Format gtexfmt;
@@ -48,7 +43,7 @@ Vec3f complexToColor(Vec2f comp) {
 	float hue = (float)M_PI+(float)atan2(comp.y,comp.x);
 	hue /= (float)(2*M_PI);
 	float lightness = comp.length();
-	lightness = .5f;
+	//lightness = .5f;
 	//lightness /= lightness + 1.0f;
 	//HslF hsl(hue, 1.0f, lightness);
  	//return FromHSL(hsl);
@@ -80,20 +75,20 @@ struct Walker {
 	}
 
 	Walker() {
-		pos = Vec2f(ci::randFloat(0, wsx), ci::randFloat(0, wsy));
+		pos = Vec2f(ci::randFloat(0, sx), ci::randFloat(0, sy));
 		age = ci::randInt(0, MAX_AGE);
 		lastMove = Vec2f::zero();
 	}
 	float noiseXAt(Vec2f p) {
 		int numDetailsX = 5;
-		float nscale = numDetailsX / (float)wsx;
+		float nscale = numDetailsX / (float)sx;
 		float noiseX = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale, noiseTimeDim);
 		return noiseX;
 	}
 	
 	float noiseYAt(Vec2f p) {
 		int numDetailsX = 5;
-		float nscale = numDetailsX / (float)wsx;
+		float nscale = numDetailsX / (float)sx;
 		float noiseY = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale + numDetailsX, noiseTimeDim);
 		return noiseY;
 	}
@@ -111,15 +106,15 @@ struct Walker {
 	void update() {
 		Vec2f toAdd = curlNoiseVec2fAt(pos) * 50.0f;
 		//toAdd.y -= 1.0f;
-		pos += toAdd;
-		color = complexToColor(toAdd);
+		pos += toAdd / scale;
+		color = complexToColor_HSV(toAdd);
 		lastMove = toAdd;
 		//color = Vec3f::one();
 
-		if(pos.x < 0) pos.x += wsx;
-		if(pos.y < 0) pos.y += wsy;
-		pos.x = fmod(pos.x, wsx);
-		pos.y = fmod(pos.y, wsy);
+		if(pos.x < 0) pos.x += sx;
+		if(pos.y < 0) pos.y += sy;
+		pos.x = fmod(pos.x, sx);
+		pos.y = fmod(pos.y, sy);
 
 		age++;
 	}
@@ -164,8 +159,6 @@ struct SApp : AppBasic {
 		}
 		if(keys['r'])
 		{
-			//std::fill(img.begin(), img.end(), 0.0f);
-			std::fill(velocity.begin(), velocity.end(), Vec2f::zero());
 		}
 		if(keys['p'] || keys['2'])
 		{
@@ -237,11 +230,9 @@ struct SApp : AppBasic {
 
 		if(pause)
 			Sleep(50);
+		//Sleep(2000);
 	}
 	void updateIt() {
-		Array2D<Vec3f> result(sx, sy);
-		img = result;
-
 		if(!pause) {
 			noiseTimeDim += noiseProgressSpeed;
 
@@ -273,7 +264,7 @@ struct SApp : AppBasic {
 	void printMinMax(string desc, Array2D<float> arr) {
 		auto maxEl = *std::max_element(arr.begin(), arr.end());
 		auto minEl = *std::min_element(arr.begin(), arr.end());
-		cout << "array '" << desc << "': min=" << minEl << ", max=" << maxEl << endl;
+		qDebug() << "array '" << desc << "': min=" << minEl << ", max=" << maxEl;
 	}
 	Array2D<Complexf> getFdKernel(Vec2i size) {
 		Array2D<float> sdKernel(size);
@@ -363,36 +354,86 @@ struct SApp : AppBasic {
 		//}
 	}
 #endif
+	Array2D<float> getKernel(Vec2i size) {
+		Array2D<float> sdKernel(size);
+		forxy(sdKernel) {
+			//auto p2=p;if(p2.x>sdKernel.w/2)p2.x-=sdKernel.w;if(p2.y>sdKernel.h/2)p2.y-=sdKernel.h;
+			float dist = p.distance(sdKernel.Size()/2);
+			//sdKernel(p) = 1.0 / (.01f + (p2-Vec2i(3, 3)).length()/10.0f);
+			sdKernel(p) = 1.0 / pow((1.f + dist*5.0f), 3.0f);
+			//sdKernel(p) = dist > 10 ? 0 : 1;
+			//sdKernel(p) = expf(-p2.lengthSquared()*.02f);
+			//if(p == Vec2i::zero()) sdKernel(p) = 1.0f;
+			//else sdKernel(p) = 0.0f;
+		}
+		auto kernelInvSum = 1.0/(std::accumulate(sdKernel.begin(), sdKernel.end(), 0.0f));
+		forxy(sdKernel) { sdKernel(p) *= kernelInvSum; }
+		return sdKernel;
+	}
 	void renderIt() {
-		auto tex = gtex(img);
-		string bg = "vec3 bg = vec3(.8);";
-		static auto walkerTex = Shade().tex(tex).expr("vec3(0.0);").scale(::scale).run();
+		static Array2D<float> sizeSource(sx, sy);
+		static auto sizeSourceTex = gtex(sizeSource);
+		string bg = "vec3 bg = vec3(0.0);";
+		static auto walkerTex = shade2(sizeSourceTex, "_out = bg;", ShadeOpts(), bg);
 		if(!pause) {
-			walkerTex = Shade().tex(walkerTex).expr("fetch3()*.99;").run();
+			walkerTex = shade2(walkerTex, "_out = mix(fetch3(), bg, .01);", ShadeOpts(), bg);
 			glPushAttrib(GL_ALL_ATTRIB_BITS);
 			glUseProgram(0);
 			glPointSize(1);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			//glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 			glEnable(GL_BLEND);
 			{
 				beginRTT(walkerTex);
 				{
-					glBegin(GL_POINTS);
+					gl::pushMatrices();
+					gl::setMatricesWindow(sx, sy, true);
 					{
-						foreach(Walker& walker, walkers) {
-							auto& c = walker.color;
-							glColor4f(c.x, c.y, c.z, walker.alpha());
-							glVertex2f(walker.pos);
+						glBegin(GL_POINTS);
+						{
+							foreach(Walker& walker, walkers) {
+								auto& c = walker.color;
+								c *= 20.0;
+								glColor4f(c.x, c.y, c.z, walker.alpha());
+								glVertex2f(walker.pos);
+							}
 						}
+						glEnd();
 					}
-					glEnd();
+					gl::popMatrices();
 				}
 				endRTT();
 			}
 			glPopAttrib();
 		}
+		if(getElapsedFrames() > 50)
+		{
+			auto walkerImg = gettexdata<Vec3f>(walkerTex, GL_RGB, GL_FLOAT, walkerTex.getCleanBounds());
+			cv::Mat_<cv::Vec3f> walkerMat(walkerImg.h, walkerImg.w, (cv::Vec3f*)walkerImg.data);
+			static Array2D<float> kernel = getKernel(Vec2i(20, 20));
+			static cv::Mat_<float> kernelMat(kernel.h, kernel.w, kernel.data);
+				cv::filter2D(walkerMat, walkerMat, -1, kernelMat, cv::Point(-1, -1), 0, cv::BORDER_WRAP);
+			walkerTex = gtex(walkerImg);
+		}
+		auto walkerTex2 = shade2(walkerTex,
+			"vec3 c = fetch3() /** 4.0*/;"
+			"c += 2.0;"
+			"float L = getL(c);"
+			"c /= L+1;"
+			//"c *= 1.2;"
+			"c -= .53;"
+			"c /= .47;"
+			"L = getLPhotoshop(c);"
+			"float oldL = L;"
+			"L *= 1.2;"
+			"L = pow(L, 1.96);"
+			"c *= L / oldL;"
+			"_out = c;",
+			ShadeOpts(),
+			FileCache::get("stuff.fs")
+			);
 
-		gl::draw(walkerTex, getWindowBounds());
+		gl::draw(walkerTex2, getWindowBounds());
 	}
 };
 

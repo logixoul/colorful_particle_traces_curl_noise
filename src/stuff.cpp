@@ -9,7 +9,7 @@ string FileCache::get(string filename) {
 	if(db.find(filename)==db.end()) {
 		std::vector<unsigned char> buffer;
 		loadFile(buffer,filename);
-		string bufferStr(&buffer[0],&buffer[buffer.size()]);
+		string bufferStr(buffer.data(), buffer.data() + buffer.size());
 		db[filename]=bufferStr;
 	}
 	return db[filename];
