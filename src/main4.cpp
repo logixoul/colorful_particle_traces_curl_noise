@@ -13,6 +13,7 @@
 #include "simplexnoise.h"
 #include "mainfunc_impl.h"
 #include "colorspaces.h"
+#include "easyfft.h"
 
 typedef Array2D<Vec3f> Image;
 int wsx=800, wsy = 800 * (800.0f / 1280.0f);
@@ -27,10 +28,21 @@ bool keys[256];
 gl::Texture::Format gtexfmt;
 float noiseTimeDim = 0.0f;
 const int MAX_AGE = 100;
+gl::Texture texToDraw;
+bool texOverride = false;
 
 float mouseX, mouseY;
 bool pause;
 bool keys2[256];
+
+Vec3f complexToColor_HSV(Vec2f comp) {
+	float hue = (float)M_PI+(float)atan2(comp.y,comp.x);
+	hue /= (float)(2*M_PI);
+	float lightness = comp.length();
+	//lightness /= lightness + 1.0f;
+	HslF hsl(hue, 1.0f, lightness);
+ 	return FromHSL(hsl);
+}
 
 Vec3f complexToColor(Vec2f comp) {
 	float hue = (float)M_PI+(float)atan2(comp.y,comp.x);
@@ -38,8 +50,23 @@ Vec3f complexToColor(Vec2f comp) {
 	float lightness = comp.length();
 	lightness = .5f;
 	//lightness /= lightness + 1.0f;
-	HslF hsl(hue, 1.0f, lightness);
- 	return FromHSL(hsl);
+	//HslF hsl(hue, 1.0f, lightness);
+ 	//return FromHSL(hsl);
+	Vec3f colors[] = {
+		//Vec3f(0,0,0),
+		Vec3f(15,131,174),
+		Vec3f(246,24,199),
+		Vec3f(148,255,171),
+		Vec3f(251,253,84)
+	};
+	int colorCount = 4;
+	float pos = hue*(colorCount - .01f);
+	int posint1 = floor(pos);
+	int posint2 = (posint1 + 1) % colorCount;
+	float posFract = pos - posint1;
+	Vec3f color1 = colors[posint1];
+	Vec3f color2 = colors[posint2];
+	return lerp(color1, color2, posFract) / 255.0f;
 }
 	
 struct Walker {
@@ -181,6 +208,8 @@ struct SApp : AppBasic {
 	
 	void draw()
 	{
+		::texOverride = false;
+
 		my_console::beginFrame();
 		sw::beginFrame();
 		static bool first = true;
@@ -224,6 +253,72 @@ struct SApp : AppBasic {
 			}
 		}
 	}
+#if 0
+	void renderComplexImg(Array2D<Complexf> in) {
+		Array2D<Vec3f> colored(in.Size());
+		forxy(in) {
+			Vec2f vec2f(in(p).real(), in(p).imag());
+			colored(p) = complexToColor_HSV(vec2f)/* * 10000.0f*/;
+		}
+		::texToDraw = gtex(colored);
+		::texOverride = true;
+	}
+	void printMinMax(string desc, Array2D<Complexf> in) {
+		auto lengths = Array2D<float>(in.Size());
+		forxy(in) {
+			lengths(p) = abs(in(p));
+		}
+		printMinMax(desc, lengths);
+	}
+	void printMinMax(string desc, Array2D<float> arr) {
+		auto maxEl = *std::max_element(arr.begin(), arr.end());
+		auto minEl = *std::min_element(arr.begin(), arr.end());
+		cout << "array '" << desc << "': min=" << minEl << ", max=" << maxEl << endl;
+	}
+	Array2D<Complexf> getFdKernel(Vec2i size) {
+		Array2D<float> sdKernel(size);
+		forxy(sdKernel) {
+			auto p2=p;if(p2.x>sdKernel.w/2)p2.x-=sdKernel.w;if(p2.y>sdKernel.h/2)p2.y-=sdKernel.h;
+			//sdKernel(p) = 1.0 / (.01f + (p2-Vec2i(3, 3)).length()/10.0f);
+			//sdKernel(p) = 1.0 / (1.f + p2.length()/10.0f);
+			sdKernel(p) = powf(max(1.0f - p2.length() / 20.0f, 0.0f), 4.0);
+			//sdKernel(p) = p2.length() > 10 ? 0 : 1;
+			//sdKernel(p) = expf(-p2.lengthSquared()*.02f);
+			//if(p == Vec2i::zero()) sdKernel(p) = 1.0f;
+			//else sdKernel(p) = 0.0f;
+		}
+		auto kernelInvSum = 1.0/(std::accumulate(sdKernel.begin(), sdKernel.end(), 0.0f));
+		forxy(sdKernel) { sdKernel(p) *= kernelInvSum; }
+		//::texToDraw = gtex(sdKernel);
+		//::texOverride = true;
+		printMinMax("sdKernel", sdKernel);
+		auto fdKernel = fft(sdKernel, FFTW_MEASURE);
+		printMinMax("fdKernel", fdKernel);
+		return fdKernel;
+	}
+	Array2D<Vec3f> convolveLongtail(Array2D<Vec3f> in) {
+		/*static*/ Array2D<Complexf> fdKernel = getFdKernel(in.Size());
+		auto inChans = ::split(in);
+		for(int i = 0; i < inChans.size(); i++) {
+			auto& inChan = inChans[i];
+			auto inChanFd = fft(inChan, FFTW_MEASURE);
+			//renderComplexImg(inChanFd);
+			forxy(inChanFd) {
+				auto p2=p;if(p2.x>in.w/2)p2.x-=in.w;if(p2.y>in.h/2)p2.y-=in.h;
+				//if(p != Vec2i::zero())
+				inChanFd(p) *= fdKernel(p) /** 1000.0f*/;
+				//if(p != Vec2f::zero())
+				//	inChanFd(p) /= 10.0f + sqrt(p2.length());
+				//inChanFd(p) *= .1f;
+				//inChanFd(p) *= expf(-.01*p2.lengthSquared());
+				//if(p2.length() > 10)
+				//	inChanFd(p) *= 0.0f;
+			}
+			//renderComplexImg(fdKernel);
+			inChan = ifft(inChanFd, FFTW_MEASURE);
+		}
+		return ::merge(inChans);
+	}
 	void renderIt() {
 		auto tex = gtex(img);
 		static auto walkerTex = Shade().tex(tex).expr("vec3(0.0);").scale(::scale).run();
@@ -231,7 +326,7 @@ struct SApp : AppBasic {
 			walkerTex = Shade().tex(walkerTex).expr("fetch3()*.99;").run();
 			glPushAttrib(GL_ALL_ATTRIB_BITS);
 			glUseProgram(0);
-			glPointSize(2);
+			glPointSize(1);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			glEnable(GL_BLEND);
 			{
@@ -252,9 +347,50 @@ struct SApp : AppBasic {
 			glPopAttrib();
 		}
 
+		//auto walkerImg = gettexdata<Vec3f>(walkerTex, GL_RGB, GL_FLOAT, walkerTex.getCleanBounds());
+		//walkerImg = convolveLongtail(walkerImg);
+		//auto walkerTex2 = gtex(walkerImg);
+
 		//auto walkerTex2 = Shade().tex(walkerTex).expr("1.0-fetch3()").run();
 
 		//walkerTex = gpuBlur2_4::run_longtail(walkerTex, 3, 1.0);
+		//auto walkerTex3 = shade2(walkerTex, walkerTex2, "_out = tc.x > .5 ? fetch3() : fetch3(tex2) * 600.0;");
+
+		//if(::texOverride) {
+		//	gl::draw(texToDraw, getWindowBounds());
+		//} else {
+		//	gl::draw(walkerTex3, getWindowBounds());
+		//}
+	}
+#endif
+	void renderIt() {
+		auto tex = gtex(img);
+		string bg = "vec3 bg = vec3(.8);";
+		static auto walkerTex = Shade().tex(tex).expr("vec3(0.0);").scale(::scale).run();
+		if(!pause) {
+			walkerTex = Shade().tex(walkerTex).expr("fetch3()*.99;").run();
+			glPushAttrib(GL_ALL_ATTRIB_BITS);
+			glUseProgram(0);
+			glPointSize(1);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glEnable(GL_BLEND);
+			{
+				beginRTT(walkerTex);
+				{
+					glBegin(GL_POINTS);
+					{
+						foreach(Walker& walker, walkers) {
+							auto& c = walker.color;
+							glColor4f(c.x, c.y, c.z, walker.alpha());
+							glVertex2f(walker.pos);
+						}
+					}
+					glEnd();
+				}
+				endRTT();
+			}
+			glPopAttrib();
+		}
 
 		gl::draw(walkerTex, getWindowBounds());
 	}
