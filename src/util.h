@@ -31,11 +31,9 @@ public:
 
 	ArrayDeleter(ArrayDeleter const& other)
 	{
-		//*this = other;
 		arrayPtr = other.arrayPtr;
 		refcountPtr = other.refcountPtr;
 		(*refcountPtr)++;
-
 	}
 
 	ArrayDeleter const& operator=(ArrayDeleter const& other)

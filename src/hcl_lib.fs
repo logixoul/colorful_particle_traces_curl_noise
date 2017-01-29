@@ -72,7 +72,7 @@ vec3 HCL2RGB(vec3 hcl)
 // note: expects gamma corrected RGB (rather than linear)
 vec3 RGB2HCL(vec3 rgb)
 {
-  float b,c,g,h,max,r;
+  float b,c,g,h,maxval,r;
   float red=rgb.r;
   float green=rgb.g;
   float blue=rgb.b;
@@ -83,19 +83,19 @@ vec3 RGB2HCL(vec3 rgb)
   r=rgb.r;
   g=rgb.g;
   b=rgb.b;
-  max=max(r,max(g,b));
-  c=max-min(r,min(g,b));
+  maxval=max(r,max(g,b));
+  c=maxval-min(r,min(g,b));
   h=0.0;
   if (c == 0)
     h=0.0;
   else
-    if (red == max)
+    if (red == maxval)
       h=mod(6.0+(g-b)/c,6.0);
     else
-      if (green == max)
+      if (green == maxval)
         h=((b-r)/c)+2.0;
       else
-        if (blue == max)
+        if (blue == maxval)
           h=((r-g)/c)+4.0;
   float hue=(h/6.0);
   float chroma=c;

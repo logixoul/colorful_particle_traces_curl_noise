@@ -145,7 +145,7 @@ struct SApp : AppBasic {
 
 		glEnable(GL_POINT_SMOOTH);
 
-		for(int i = 0; i < 4000; i++) {
+		for(int i = 0; i < 4000 / sq(scale); i++) {
 			walkers.push_back(Walker());
 		}
 	}
@@ -420,14 +420,8 @@ struct SApp : AppBasic {
 			"c += 2.0;"
 			"float L = getL(c);"
 			"c /= L+1;"
-			//"c *= 1.2;"
 			"c -= .53;"
 			"c /= .47;"
-			"L = getLPhotoshop(c);"
-			"float oldL = L;"
-			"L *= 1.2;"
-			"L = pow(L, 1.96);"
-			"c *= L / oldL;"
 			"_out = c;",
 			ShadeOpts(),
 			FileCache::get("stuff.fs")
