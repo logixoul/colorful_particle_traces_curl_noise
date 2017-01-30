@@ -13,6 +13,7 @@
 #include "simplexnoise.h"
 #include "mainfunc_impl.h"
 #include "colorspaces.h"
+#include "easyfft.h"
 
 int wsx=800, wsy = 800 * (800.0f / 1280.0f);
 int scale = 1;
@@ -272,19 +273,17 @@ struct SApp : AppBasic {
 			auto p2=p;if(p2.x>sdKernel.w/2)p2.x-=sdKernel.w;if(p2.y>sdKernel.h/2)p2.y-=sdKernel.h;
 			//sdKernel(p) = 1.0 / (.01f + (p2-Vec2i(3, 3)).length()/10.0f);
 			//sdKernel(p) = 1.0 / (1.f + p2.length()/10.0f);
-			sdKernel(p) = powf(max(1.0f - p2.length() / 20.0f, 0.0f), 4.0);
-			//sdKernel(p) = p2.length() > 10 ? 0 : 1;
+			float dist = p2.length();
+			//sdKernel(p) = powf(max(1.0f - p2.length() / 20.0f, 0.0f), 4.0);
+			//sdKernel(p) = 1.0 / pow((1.f + dist*5.0f), 3.0f);
+			sdKernel(p) = p2.length() > 10 ? 0 : 1;
 			//sdKernel(p) = expf(-p2.lengthSquared()*.02f);
 			//if(p == Vec2i::zero()) sdKernel(p) = 1.0f;
 			//else sdKernel(p) = 0.0f;
 		}
 		auto kernelInvSum = 1.0/(std::accumulate(sdKernel.begin(), sdKernel.end(), 0.0f));
 		forxy(sdKernel) { sdKernel(p) *= kernelInvSum; }
-		//::texToDraw = gtex(sdKernel);
-		//::texOverride = true;
-		printMinMax("sdKernel", sdKernel);
 		auto fdKernel = fft(sdKernel, FFTW_MEASURE);
-		printMinMax("fdKernel", fdKernel);
 		return fdKernel;
 	}
 	Array2D<Vec3f> convolveLongtail(Array2D<Vec3f> in) {
@@ -296,8 +295,7 @@ struct SApp : AppBasic {
 			//renderComplexImg(inChanFd);
 			forxy(inChanFd) {
 				auto p2=p;if(p2.x>in.w/2)p2.x-=in.w;if(p2.y>in.h/2)p2.y-=in.h;
-				//if(p != Vec2i::zero())
-				inChanFd(p) *= fdKernel(p) /** 1000.0f*/;
+				inChanFd(p) *= fdKernel(p);
 				//if(p != Vec2f::zero())
 				//	inChanFd(p) /= 10.0f + sqrt(p2.length());
 				//inChanFd(p) *= .1f;
@@ -311,49 +309,53 @@ struct SApp : AppBasic {
 		return ::merge(inChans);
 	}
 	void renderIt() {
-		auto tex = gtex(img);
-		static auto walkerTex = Shade().tex(tex).expr("vec3(0.0);").scale(::scale).run();
+		static Array2D<float> sizeSource(sx, sy);
+		static auto sizeSourceTex = gtex(sizeSource);
+		static auto walkerTex = Shade().tex(sizeSourceTex).expr("vec3(0.0);").run();
 		if(!pause) {
 			walkerTex = Shade().tex(walkerTex).expr("fetch3()*.99;").run();
 			glPushAttrib(GL_ALL_ATTRIB_BITS);
 			glUseProgram(0);
-			glPointSize(1);
+			glPointSize(2);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			glEnable(GL_BLEND);
 			{
 				beginRTT(walkerTex);
 				{
-					glBegin(GL_POINTS);
+					gl::pushMatrices();
+					gl::setMatricesWindow(sx, sy, true);
 					{
-						foreach(Walker& walker, walkers) {
-							auto& c = walker.color;
-							glColor4f(c.x, c.y, c.z, walker.alpha());
-							glVertex2f(walker.pos);
+						glBegin(GL_POINTS);
+						{
+							foreach(Walker& walker, walkers) {
+								auto& c = walker.color;
+								glColor4f(c.x, c.y, c.z, walker.alpha());
+								glVertex2f(walker.pos);
+							}
 						}
+						glEnd();
 					}
-					glEnd();
+					gl::popMatrices();
 				}
 				endRTT();
 			}
 			glPopAttrib();
 		}
 
-		//auto walkerImg = gettexdata<Vec3f>(walkerTex, GL_RGB, GL_FLOAT, walkerTex.getCleanBounds());
-		//walkerImg = convolveLongtail(walkerImg);
-		//auto walkerTex2 = gtex(walkerImg);
-
-		//auto walkerTex2 = Shade().tex(walkerTex).expr("1.0-fetch3()").run();
+		auto walkerImg = gettexdata<Vec3f>(walkerTex, GL_RGB, GL_FLOAT, walkerTex.getCleanBounds());
+		walkerImg = convolveLongtail(walkerImg);
+		auto walkerTex2 = gtex(walkerImg);
 
 		//walkerTex = gpuBlur2_4::run_longtail(walkerTex, 3, 1.0);
-		//auto walkerTex3 = shade2(walkerTex, walkerTex2, "_out = tc.x > .5 ? fetch3() : fetch3(tex2) * 600.0;");
+		auto walkerTex3 = shade2(walkerTex, walkerTex2, "_out = tc.x > .5 ? fetch3() : fetch3(tex2) * 600.0;");
 
-		//if(::texOverride) {
-		//	gl::draw(texToDraw, getWindowBounds());
-		//} else {
-		//	gl::draw(walkerTex3, getWindowBounds());
-		//}
+		if(::texOverride) {
+			gl::draw(texToDraw, getWindowBounds());
+		} else {
+			gl::draw(walkerTex3, getWindowBounds());
+		}
 	}
-#endif
+#else
 	Array2D<float> getKernel(Vec2i size) {
 		Array2D<float> sdKernel(size);
 		forxy(sdKernel) {
@@ -429,8 +431,8 @@ struct SApp : AppBasic {
 
 		gl::draw(walkerTex2, getWindowBounds());
 	}
+#endif
 };
-
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	return mainFuncImpl(new SApp());
 }

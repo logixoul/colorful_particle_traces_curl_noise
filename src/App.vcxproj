@@ -152,7 +152,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="hcl_lib.fs" />
-    <None Include="stuff.fs" />
+    <None Include="stuff.fs">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
