@@ -481,7 +481,7 @@ struct SApp : AppBasic {
 			ShadeOpts(),
 			FileCache::get("stuff.fs")
 			);
-		auto walkerImg2 = gettexdata<Vec3f>(walkerTex2, GL_RGB, GL_FLOAT, walkerTex.getCleanBounds());
+		//auto walkerImg2 = gettexdata<Vec3f>(walkerTex2, GL_RGB, GL_FLOAT, walkerTex.getCleanBounds());
 		forxy(img2)
 		{
 			
