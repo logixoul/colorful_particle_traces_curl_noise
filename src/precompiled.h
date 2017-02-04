@@ -12,6 +12,7 @@
 #include <cinder/ImageIo.h>
 #include <cinder/Vector.h>
 #include <cinder/Rand.h>
+#include <cinder/Camera.h>
 #include <boost/foreach.hpp>
 #include <fftw3.h>
 #include <opencv2/imgproc.hpp>
