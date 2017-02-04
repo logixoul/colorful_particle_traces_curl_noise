@@ -321,7 +321,7 @@ struct SApp : AppBasic {
 		string bg = "vec3 bg = vec3(0.0);";
 		static auto walkerTex = shade2(sizeSourceTex, "_out = bg;", ShadeOpts(), bg);
 		if(!pause) {
-			walkerTex = shade2(walkerTex, "_out = mix(fetch3(), bg, .02);", ShadeOpts(), bg);
+			walkerTex = shade2(walkerTex, "_out = mix(fetch3(), bg, .01);", ShadeOpts(), bg);
 			glPushAttrib(GL_ALL_ATTRIB_BITS);
 			glUseProgram(0);
 			glPointSize(1);
@@ -360,17 +360,6 @@ struct SApp : AppBasic {
 				cv::filter2D(walkerMat, walkerMat, -1, kernelMat, cv::Point(-1, -1), 0, cv::BORDER_WRAP);
 			walkerTex = gtex(walkerImg);
 		}
-		auto walkerTex2 = shade2(walkerTex,
-			"vec3 c = fetch3();"
-			"c += 2.0;"
-			"float L = getL(c);"
-			"c /= L+1;"
-			"c -= .53;"
-			"c /= .47;"
-			"_out = c;",
-			ShadeOpts(),
-			FileCache::get("stuff.fs")
-			);
 		//auto walkerImg2 = gettexdata<Vec3f>(walkerTex2, GL_RGB, GL_FLOAT, walkerTex.getCleanBounds());
 		forxy(img2)
 		{
@@ -404,7 +393,7 @@ struct SApp : AppBasic {
 		}
 		calcNormals();
 		shader.bind();
-		shader.uniform("tex", 0); walkerTex2.bind(0);
+		shader.uniform("tex", 0); walkerTex.bind(0);
 		shader.uniform("mouse", Vec2f(mouseX, mouseY));
 		shader.uniform("time", (float)getElapsedSeconds());
 		shader.uniform("viewportSize", (Vec2f)getWindowSize());
