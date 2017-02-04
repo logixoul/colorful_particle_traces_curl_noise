@@ -64,7 +64,7 @@ Vec3f complexToColor(Vec2f comp) {
 	Vec3f color2 = colors[posint2];
 	return lerp(color1, color2, posFract) / 255.0f;
 }
-	
+
 struct Walker {
 	Vec2f pos;
 	int age;
@@ -122,6 +122,46 @@ struct Walker {
 };
 
 vector<Walker> walkers;
+
+// begin 3d heightmap
+
+	Array2D<Vec3f> normals;
+	struct Triangle
+	{
+		Vec3f a, b, c;
+		Vec3f a0, b0, c0;
+		Vec2i ia, ib, ic;
+		Triangle(Vec3f const& a, Vec3f const& b, Vec3f const& c,
+			Vec3f a0, Vec3f b0, Vec3f c0, Vec2i ia, Vec2i ib, Vec2i ic) : a(a), b(b), c(c), a0(a0), b0(b0), c0(c0), ia(ia), ib(ib), ic(ic)
+		{
+
+		}
+	};
+	vector<Triangle> triangles2;
+	Array2D<Triangle> triangles;
+	
+	Vec3f getNormal(Triangle t)
+	{
+		return (t.b-t.c).cross(t.b-t.a).normalized();
+	}
+
+	void calcNormals()
+	{
+		normals = Array2D<Vec3f>(sx, sy);
+		
+		foreach(auto& triangle, triangles2)
+		{
+			auto n6 = getNormal(triangle);
+			normals(triangle.ia) += n6;
+			normals(triangle.ib) += n6;
+			normals(triangle.ic) += n6;
+		}
+		forxy(normals)
+		{
+			normals(p) = normals(p).safeNormalized();
+		}
+	}
+// end 3d heightmap
 
 void updateConfig() {
 }
@@ -378,7 +418,7 @@ struct SApp : AppBasic {
 		string bg = "vec3 bg = vec3(0.0);";
 		static auto walkerTex = shade2(sizeSourceTex, "_out = bg;", ShadeOpts(), bg);
 		if(!pause) {
-			walkerTex = shade2(walkerTex, "_out = mix(fetch3(), bg, .01);", ShadeOpts(), bg);
+			walkerTex = shade2(walkerTex, "_out = mix(fetch3(), bg, .02);", ShadeOpts(), bg);
 			glPushAttrib(GL_ALL_ATTRIB_BITS);
 			glUseProgram(0);
 			glPointSize(1);
@@ -430,6 +470,8 @@ struct SApp : AppBasic {
 			);
 
 		gl::draw(walkerTex2, getWindowBounds());
+
+		//CameraPersp camera;
 	}
 #endif
 };
