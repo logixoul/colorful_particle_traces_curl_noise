@@ -198,7 +198,7 @@ struct SApp : AppBasic {
 
 		glEnable(GL_POINT_SMOOTH);
 
-		for(int i = 0; i < 4000 / sq(scale); i++) {
+		for(int i = 0; i < 4000 /*/ sq(scale)*/; i++) {
 			walkers.push_back(Walker());
 		}
 
@@ -360,18 +360,20 @@ struct SApp : AppBasic {
 				cv::filter2D(walkerMat, walkerMat, -1, kernelMat, cv::Point(-1, -1), 0, cv::BORDER_WRAP);
 			walkerTex = gtex(walkerImg);
 		}
-		//auto walkerImg2 = gettexdata<Vec3f>(walkerTex2, GL_RGB, GL_FLOAT, walkerTex.getCleanBounds());
+		auto walkerImg = gettexdata<Vec3f>(walkerTex, GL_RGB, GL_FLOAT, walkerTex.getCleanBounds());
 		forxy(img2)
 		{
 			
-			//img2(p) = walkerImg2(p).dot(Vec3f::one()*1.0/3.0) * 1.0;
-			int numDetailsX = 5;
+			/*int numDetailsX = 5;
 			float nscale = numDetailsX / (float)sx;
 			float f = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale, heightmapTimeDim);
 			//float f = Walker::noiseXAt(p);
 			f = f * .5 + .5;
 			f = pow(f, 4.0f);
-			img2(p) = f * 40.0;
+			img2(p) = f * 40.0;*/
+			float f = walkerImg(p).dot(Vec3f::one()*1.0/3.0) * 1.0;
+			f = pow(f, 1.0f / 3.0f) * 2.0f;
+			img2(p) = f;
 		}
 		
 		CameraPersp camera;
