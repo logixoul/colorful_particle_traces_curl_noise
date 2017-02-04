@@ -486,13 +486,16 @@ struct SApp : AppBasic {
 		{
 			
 			//img2(p) = walkerImg2(p).dot(Vec3f::one()*1.0/3.0) * 1.0;
-			img2(p) = Walker::noiseXAt(p/2.0f) * 20.0;
+			float f = Walker::noiseXAt(p);
+			f = f * .5 + .5;
+			f = pow(f, 4.0f);
+			img2(p) = f * 40.0;
 		}
 		
 		CameraPersp camera;
-		Vec3f toLookAt(sx/2, sy/2, 0.0f);
-		Vec3f cameraPos(toLookAt.x, toLookAt.y, sx / 4);
-		camera.lookAt(cameraPos, toLookAt, -Vec3f::zAxis());
+		Vec3f toLookAt(sx/2, sy/2+60, 0.0f);
+		Vec3f cameraPos(toLookAt.x, toLookAt.y+50, sx / 4-10);
+		camera.lookAt(cameraPos, toLookAt, Vec3f::zAxis());
 		camera.setAspectRatio(getWindowAspectRatio());
 		camera.setFov(90.0f); // degrees
 
