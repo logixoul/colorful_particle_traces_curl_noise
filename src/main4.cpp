@@ -23,6 +23,7 @@ bool mouseDown_[3];
 bool keys[256];
 gl::Texture::Format gtexfmt;
 float noiseTimeDim = 0.0f;
+float heightmapTimeDim = 0.0f;
 const int MAX_AGE = 100;
 gl::Texture texToDraw;
 bool texOverride = false;
@@ -289,7 +290,7 @@ struct SApp : AppBasic {
 	void updateIt() {
 		if(!pause) {
 			noiseTimeDim += noiseProgressSpeed;
-
+			heightmapTimeDim += 0.01f;
 			foreach(Walker& walker, walkers) {
 				walker.update();
 				if(walker.age > MAX_AGE) {
@@ -486,7 +487,10 @@ struct SApp : AppBasic {
 		{
 			
 			//img2(p) = walkerImg2(p).dot(Vec3f::one()*1.0/3.0) * 1.0;
-			float f = Walker::noiseXAt(p);
+			int numDetailsX = 5;
+			float nscale = numDetailsX / (float)sx;
+			float f = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale, heightmapTimeDim);
+			//float f = Walker::noiseXAt(p);
 			f = f * .5 + .5;
 			f = pow(f, 4.0f);
 			img2(p) = f * 40.0;

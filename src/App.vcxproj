@@ -152,8 +152,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="hcl_lib.fs" />
-    <None Include="heightmap.fs" />
-    <None Include="heightmap.vs" />
+    <None Include="heightmap.fs">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </None>
+    <None Include="heightmap.vs">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </None>
     <None Include="stuff.fs">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </None>
