@@ -471,7 +471,7 @@ struct SApp : AppBasic {
 			walkerTex = gtex(walkerImg);
 		}
 		auto walkerTex2 = shade2(walkerTex,
-			"vec3 c = fetch3() /** 4.0*/;"
+			"vec3 c = fetch3();"
 			"c += 2.0;"
 			"float L = getL(c);"
 			"c /= L+1;"
