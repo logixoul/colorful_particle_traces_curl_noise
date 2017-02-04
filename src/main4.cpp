@@ -486,7 +486,7 @@ struct SApp : AppBasic {
 		{
 			
 			//img2(p) = walkerImg2(p).dot(Vec3f::one()*1.0/3.0) * 1.0;
-			img2(p) = Walker::noiseXAt(p) * 10.0;
+			img2(p) = Walker::noiseXAt(p/2.0f) * 20.0;
 		}
 		
 		CameraPersp camera;
