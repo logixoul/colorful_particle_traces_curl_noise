@@ -515,8 +515,20 @@ struct SApp : AppBasic {
 			}
 			glPopAttrib();
 		}
-		
-		gl::draw(walkerTex, getWindowBounds());
+		auto walkerTexB = gpuBlur2_4::run(walkerTex, 2);
+		auto walkerTex2 = shade2(walkerTex, walkerTexB,
+			"vec3 c = fetch3();"
+			"vec3 hsl = rgb2hsl(c);"
+			"hsl.z /= .5;"
+			"hsl.z = min(hsl.z, 1.0);"
+			"hsl.z = pow(hsl.z, 3.0);"
+			"c = hsl2rgb(hsl);"
+			"c += fetch3(tex2);"
+			"_out = c;",
+			ShadeOpts(),
+			FileCache::get("stuff.fs")
+			);
+		gl::draw(walkerTex2, getWindowBounds());
 
 		//CameraPersp camera;
 	}
