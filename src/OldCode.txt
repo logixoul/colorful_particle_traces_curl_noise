@@ -1,0 +1,10 @@
+		/*if(getElapsedFrames() > 50)
+		{
+			auto walkerImg = gettexdata<Vec3f>(walkerTex, GL_RGB, GL_FLOAT, walkerTex.getCleanBounds());
+			cv::Mat_<cv::Vec3f> walkerMat(walkerImg.h, walkerImg.w, (cv::Vec3f*)walkerImg.data);
+			static Array2D<float> kernel = getKernel(Vec2i(20, 20));
+			static cv::Mat_<float> kernelMat(kernel.h, kernel.w, kernel.data);
+				cv::filter2D(walkerMat, walkerMat, -1, kernelMat, cv::Point(-1, -1), 0, cv::BORDER_WRAP);
+			walkerTex = gtex(walkerImg);
+		}*/
+		

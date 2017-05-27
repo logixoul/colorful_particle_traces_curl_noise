@@ -152,6 +152,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="hcl_lib.fs" />
+    <None Include="OldCode.txt" />
     <None Include="stuff.fs">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </None>

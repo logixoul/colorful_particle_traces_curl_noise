@@ -35,6 +35,7 @@ Vec3f complexToColor_HSV(Vec2f comp) {
 	float hue = (float)M_PI+(float)atan2(comp.y,comp.x);
 	hue /= (float)(2*M_PI);
 	float lightness = comp.length();
+	lightness = .5f;
 	//lightness /= lightness + 1.0f;
 	HslF hsl(hue, 1.0f, lightness);
  	return FromHSL(hsl);
@@ -418,10 +419,10 @@ struct SApp : AppBasic {
 		string bg = "vec3 bg = vec3(0.0);";
 		static auto walkerTex = shade2(sizeSourceTex, "_out = bg;", ShadeOpts(), bg);
 		if(!pause) {
-			walkerTex = shade2(walkerTex, "_out = mix(fetch3(), bg, .02);", ShadeOpts(), bg);
+			walkerTex = shade2(walkerTex, "_out = mix(fetch3(), bg, 0.007);", ShadeOpts(), bg);
 			glPushAttrib(GL_ALL_ATTRIB_BITS);
 			glUseProgram(0);
-			glPointSize(1);
+			glPointSize(2);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			//glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 			glEnable(GL_BLEND);
@@ -435,7 +436,6 @@ struct SApp : AppBasic {
 						{
 							foreach(Walker& walker, walkers) {
 								auto& c = walker.color;
-								c *= 20.0;
 								glColor4f(c.x, c.y, c.z, walker.alpha());
 								glVertex2f(walker.pos);
 							}
@@ -448,28 +448,8 @@ struct SApp : AppBasic {
 			}
 			glPopAttrib();
 		}
-		if(getElapsedFrames() > 50)
-		{
-			auto walkerImg = gettexdata<Vec3f>(walkerTex, GL_RGB, GL_FLOAT, walkerTex.getCleanBounds());
-			cv::Mat_<cv::Vec3f> walkerMat(walkerImg.h, walkerImg.w, (cv::Vec3f*)walkerImg.data);
-			static Array2D<float> kernel = getKernel(Vec2i(20, 20));
-			static cv::Mat_<float> kernelMat(kernel.h, kernel.w, kernel.data);
-				cv::filter2D(walkerMat, walkerMat, -1, kernelMat, cv::Point(-1, -1), 0, cv::BORDER_WRAP);
-			walkerTex = gtex(walkerImg);
-		}
-		auto walkerTex2 = shade2(walkerTex,
-			"vec3 c = fetch3() /** 4.0*/;"
-			"c += 2.0;"
-			"float L = getL(c);"
-			"c /= L+1;"
-			"c -= .53;"
-			"c /= .47;"
-			"_out = c;",
-			ShadeOpts(),
-			FileCache::get("stuff.fs")
-			);
-
-		gl::draw(walkerTex2, getWindowBounds());
+		
+		gl::draw(walkerTex, getWindowBounds());
 
 		//CameraPersp camera;
 	}
