@@ -489,7 +489,7 @@ struct SApp : AppBasic {
 			walkerTex = shade2(walkerTex, "_out = mix(fetch3(), bg, 0.007);", ShadeOpts(), bg);
 			glPushAttrib(GL_ALL_ATTRIB_BITS);
 			glUseProgram(0);
-			glPointSize(2);
+			glPointSize(2.5);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			//glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 			glEnable(GL_BLEND);
