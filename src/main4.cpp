@@ -15,6 +15,8 @@
 #include "colorspaces.h"
 #include "easyfft.h"
 
+// baseline: 18fps
+
 int wsx=1000, wsy = 1000 * (800.0f / 1280.0f);
 int scale = 1;
 int sx = wsx / scale;
@@ -133,6 +135,9 @@ Vec3f complexToColor(Vec2f comp) {
 	return lerp(color1, color2, posFract) / 255.0f;
 }
 
+int numDetailsX = 5;
+float nscale = numDetailsX / (float)sx;
+
 struct Walker {
 	Vec2f pos;
 	int age;
@@ -149,15 +154,11 @@ struct Walker {
 		lastMove = Vec2f::zero();
 	}
 	static float noiseXAt(Vec2f p, float z) {
-		int numDetailsX = 5;
-		float nscale = numDetailsX / (float)sx;
 		float noiseX = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale, z);
 		return noiseX;
 	}
 	
 	static float noiseYAt(Vec2f p, float z) {
-		int numDetailsX = 5;
-		float nscale = numDetailsX / (float)sx;
 		float noiseY = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale + numDetailsX, z);
 		return noiseY;
 	}
