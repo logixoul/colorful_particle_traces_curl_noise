@@ -137,3 +137,16 @@
 		forxy(sdKernel) { sdKernel(p) *= kernelInvSum; }
 		return sdKernel;
 	}
+
+==============================================
+
+			walkerTex = shade2(walkerTex,
+				"vec2 tcZoomed = mix(vec2(-0.002), vec2(1.002), tc);"
+				"bool outside1 = max(tcZoomed, vec2(0.0)) != tcZoomed;"
+				"bool outside2 = min(tcZoomed, vec2(1.0)) != tcZoomed;"
+				"if(outside1 || outside2) {"
+				"	_out = vec3(0.0);"
+				"	return;"
+				"}"
+				"_out = fetch3(tex, tcZoomed);"
+			);
