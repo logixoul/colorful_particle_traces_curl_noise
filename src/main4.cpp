@@ -23,7 +23,7 @@ bool mouseDown_[3];
 bool keys[256];
 gl::Texture::Format gtexfmt;
 float noiseTimeDim = 0.0f;
-const int MAX_AGE = 100;
+const int MAX_AGE = 200;
 gl::Texture texToDraw;
 bool texOverride = false;
 
@@ -148,32 +148,32 @@ struct Walker {
 		age = ci::randInt(0, MAX_AGE);
 		lastMove = Vec2f::zero();
 	}
-	float noiseXAt(Vec2f p) {
+	static float noiseXAt(Vec2f p, float z) {
 		int numDetailsX = 5;
 		float nscale = numDetailsX / (float)sx;
-		float noiseX = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale, noiseTimeDim);
+		float noiseX = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale, z);
 		return noiseX;
 	}
 	
-	float noiseYAt(Vec2f p) {
+	static float noiseYAt(Vec2f p, float z) {
 		int numDetailsX = 5;
 		float nscale = numDetailsX / (float)sx;
-		float noiseY = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale + numDetailsX, noiseTimeDim);
+		float noiseY = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale + numDetailsX, z);
 		return noiseY;
 	}
-	Vec2f noiseVec2fAt(Vec2f p) {
-		return Vec2f(noiseXAt(p), noiseYAt(p));
+	static Vec2f noiseVec2fAt(Vec2f p, float z) {
+		return Vec2f(noiseXAt(p, z), noiseYAt(p, z));
 	}
-	Vec2f curlNoiseVec2fAt(Vec2f p) {
+	static Vec2f curlNoiseVec2fAt(Vec2f p, float z) {
 		float eps = 1;
-		float noiseXAbove = noiseXAt(p - Vec2f(0, eps));
-		float noiseXBelow = noiseXAt(p + Vec2f(0, eps));
-		float noiseYOnLeft = noiseYAt(p - Vec2f(eps, 0));
-		float noiseYOnRight = noiseYAt(p + Vec2f(eps, 0));
+		float noiseXAbove = noiseXAt(p - Vec2f(0, eps), z);
+		float noiseXBelow = noiseXAt(p + Vec2f(0, eps), z);
+		float noiseYOnLeft = noiseYAt(p - Vec2f(eps, 0), z);
+		float noiseYOnRight = noiseYAt(p + Vec2f(eps, 0), z);
 		return Vec2f(noiseXBelow - noiseXAbove, -(noiseYOnRight - noiseYOnLeft)) / (2.0f * eps);
 	}
 	void update() {
-		Vec2f toAdd = curlNoiseVec2fAt(pos) * 50.0f;
+		Vec2f toAdd = curlNoiseVec2fAt(pos, noiseTimeDim) * 50.0f;
 		//toAdd.y -= 1.0f;
 		pos += toAdd / scale;
 		color = complexToColor_HSV(toAdd);
@@ -190,46 +190,6 @@ struct Walker {
 };
 
 vector<Walker> walkers;
-
-// begin 3d heightmap
-
-	Array2D<Vec3f> normals;
-	struct Triangle
-	{
-		Vec3f a, b, c;
-		Vec3f a0, b0, c0;
-		Vec2i ia, ib, ic;
-		Triangle(Vec3f const& a, Vec3f const& b, Vec3f const& c,
-			Vec3f a0, Vec3f b0, Vec3f c0, Vec2i ia, Vec2i ib, Vec2i ic) : a(a), b(b), c(c), a0(a0), b0(b0), c0(c0), ia(ia), ib(ib), ic(ic)
-		{
-
-		}
-	};
-	vector<Triangle> triangles2;
-	Array2D<Triangle> triangles;
-	
-	Vec3f getNormal(Triangle t)
-	{
-		return (t.b-t.c).cross(t.b-t.a).normalized();
-	}
-
-	void calcNormals()
-	{
-		normals = Array2D<Vec3f>(sx, sy);
-		
-		foreach(auto& triangle, triangles2)
-		{
-			auto n6 = getNormal(triangle);
-			normals(triangle.ia) += n6;
-			normals(triangle.ib) += n6;
-			normals(triangle.ic) += n6;
-		}
-		forxy(normals)
-		{
-			normals(p) = normals(p).safeNormalized();
-		}
-	}
-// end 3d heightmap
 
 void updateConfig() {
 }
@@ -339,7 +299,6 @@ struct SApp : AppBasic {
 
 		if(pause)
 			Sleep(50);
-		//Sleep(2000);
 	}
 	void updateIt() {
 		if(!pause) {
@@ -353,138 +312,13 @@ struct SApp : AppBasic {
 			}
 		}
 	}
-#if 0
-	void renderComplexImg(Array2D<Complexf> in) {
-		Array2D<Vec3f> colored(in.Size());
-		forxy(in) {
-			Vec2f vec2f(in(p).real(), in(p).imag());
-			colored(p) = complexToColor_HSV(vec2f)/* * 10000.0f*/;
-		}
-		::texToDraw = gtex(colored);
-		::texOverride = true;
-	}
-	void printMinMax(string desc, Array2D<Complexf> in) {
-		auto lengths = Array2D<float>(in.Size());
-		forxy(in) {
-			lengths(p) = abs(in(p));
-		}
-		printMinMax(desc, lengths);
-	}
-	void printMinMax(string desc, Array2D<float> arr) {
-		auto maxEl = *std::max_element(arr.begin(), arr.end());
-		auto minEl = *std::min_element(arr.begin(), arr.end());
-		qDebug() << "array '" << desc << "': min=" << minEl << ", max=" << maxEl;
-	}
-	Array2D<Complexf> getFdKernel(Vec2i size) {
-		Array2D<float> sdKernel(size);
-		forxy(sdKernel) {
-			auto p2=p;if(p2.x>sdKernel.w/2)p2.x-=sdKernel.w;if(p2.y>sdKernel.h/2)p2.y-=sdKernel.h;
-			//sdKernel(p) = 1.0 / (.01f + (p2-Vec2i(3, 3)).length()/10.0f);
-			//sdKernel(p) = 1.0 / (1.f + p2.length()/10.0f);
-			float dist = p2.length();
-			//sdKernel(p) = powf(max(1.0f - p2.length() / 20.0f, 0.0f), 4.0);
-			//sdKernel(p) = 1.0 / pow((1.f + dist*5.0f), 3.0f);
-			sdKernel(p) = p2.length() > 10 ? 0 : 1;
-			//sdKernel(p) = expf(-p2.lengthSquared()*.02f);
-			//if(p == Vec2i::zero()) sdKernel(p) = 1.0f;
-			//else sdKernel(p) = 0.0f;
-		}
-		auto kernelInvSum = 1.0/(std::accumulate(sdKernel.begin(), sdKernel.end(), 0.0f));
-		forxy(sdKernel) { sdKernel(p) *= kernelInvSum; }
-		auto fdKernel = fft(sdKernel, FFTW_MEASURE);
-		return fdKernel;
-	}
-	Array2D<Vec3f> convolveLongtail(Array2D<Vec3f> in) {
-		/*static*/ Array2D<Complexf> fdKernel = getFdKernel(in.Size());
-		auto inChans = ::split(in);
-		for(int i = 0; i < inChans.size(); i++) {
-			auto& inChan = inChans[i];
-			auto inChanFd = fft(inChan, FFTW_MEASURE);
-			//renderComplexImg(inChanFd);
-			forxy(inChanFd) {
-				auto p2=p;if(p2.x>in.w/2)p2.x-=in.w;if(p2.y>in.h/2)p2.y-=in.h;
-				inChanFd(p) *= fdKernel(p);
-				//if(p != Vec2f::zero())
-				//	inChanFd(p) /= 10.0f + sqrt(p2.length());
-				//inChanFd(p) *= .1f;
-				//inChanFd(p) *= expf(-.01*p2.lengthSquared());
-				//if(p2.length() > 10)
-				//	inChanFd(p) *= 0.0f;
-			}
-			//renderComplexImg(fdKernel);
-			inChan = ifft(inChanFd, FFTW_MEASURE);
-		}
-		return ::merge(inChans);
-	}
 	void renderIt() {
-		static Array2D<float> sizeSource(sx, sy);
-		static auto sizeSourceTex = gtex(sizeSource);
-		static auto walkerTex = Shade().tex(sizeSourceTex).expr("vec3(0.0);").run();
-		if(!pause) {
-			walkerTex = Shade().tex(walkerTex).expr("fetch3()*.99;").run();
-			glPushAttrib(GL_ALL_ATTRIB_BITS);
-			glUseProgram(0);
-			glPointSize(2);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			glEnable(GL_BLEND);
-			{
-				beginRTT(walkerTex);
-				{
-					gl::pushMatrices();
-					gl::setMatricesWindow(sx, sy, true);
-					{
-						glBegin(GL_POINTS);
-						{
-							foreach(Walker& walker, walkers) {
-								auto& c = walker.color;
-								glColor4f(c.x, c.y, c.z, walker.alpha());
-								glVertex2f(walker.pos);
-							}
-						}
-						glEnd();
-					}
-					gl::popMatrices();
-				}
-				endRTT();
-			}
-			glPopAttrib();
-		}
-
-		auto walkerImg = gettexdata<Vec3f>(walkerTex, GL_RGB, GL_FLOAT, walkerTex.getCleanBounds());
-		walkerImg = convolveLongtail(walkerImg);
-		auto walkerTex2 = gtex(walkerImg);
-
-		//walkerTex = gpuBlur2_4::run_longtail(walkerTex, 3, 1.0);
-		auto walkerTex3 = shade2(walkerTex, walkerTex2, "_out = tc.x > .5 ? fetch3() : fetch3(tex2) * 600.0;");
-
-		if(::texOverride) {
-			gl::draw(texToDraw, getWindowBounds());
-		} else {
-			gl::draw(walkerTex3, getWindowBounds());
-		}
-	}
-#else
-	Array2D<float> getKernel(Vec2i size) {
-		Array2D<float> sdKernel(size);
-		forxy(sdKernel) {
-			//auto p2=p;if(p2.x>sdKernel.w/2)p2.x-=sdKernel.w;if(p2.y>sdKernel.h/2)p2.y-=sdKernel.h;
-			float dist = p.distance(sdKernel.Size()/2);
-			//sdKernel(p) = 1.0 / (.01f + (p2-Vec2i(3, 3)).length()/10.0f);
-			sdKernel(p) = 1.0 / pow((1.f + dist*5.0f), 3.0f);
-			//sdKernel(p) = dist > 10 ? 0 : 1;
-			//sdKernel(p) = expf(-p2.lengthSquared()*.02f);
-			//if(p == Vec2i::zero()) sdKernel(p) = 1.0f;
-			//else sdKernel(p) = 0.0f;
-		}
-		auto kernelInvSum = 1.0/(std::accumulate(sdKernel.begin(), sdKernel.end(), 0.0f));
-		forxy(sdKernel) { sdKernel(p) *= kernelInvSum; }
-		return sdKernel;
-	}
-	void renderIt() {
+		const float t = getElapsedFrames();
 		static Array2D<float> sizeSource(sx, sy);
 		static auto sizeSourceTex = gtex(sizeSource);
 		string bg = "vec3 bg = vec3(0.0);";
 		static auto walkerTex = shade2(sizeSourceTex, "_out = bg;", ShadeOpts(), bg);
+		Matrix22f rotMat = Matrix22f::createRotation(sin(t/10.0));
 		if(!pause) {
 			walkerTex = shade2(walkerTex, "_out = mix(fetch3(), bg, 0.007);", ShadeOpts(), bg);
 			glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -503,8 +337,10 @@ struct SApp : AppBasic {
 						{
 							foreach(Walker& walker, walkers) {
 								auto& c = walker.color;
-								glColor4f(c.x, c.y, c.z, walker.alpha());
-								glVertex2f(walker.pos);
+								glColor4f(c.x, c.y, c.z, walker.alpha()*.3f);
+								auto rotated = rotMat.transformVec(walker.lastMove).safeNormalized() * 30.0f;
+								glVertex2f(walker.pos+rotated);
+								glVertex2f(walker.pos-rotated);
 							}
 						}
 						glEnd();
@@ -515,8 +351,18 @@ struct SApp : AppBasic {
 			}
 			glPopAttrib();
 		}
-		auto walkerTexB = gpuBlur2_4::run(walkerTex, 2);
-		auto walkerTex2 = shade2(walkerTex, walkerTexB,
+		Array2D<Vec2f> noise(sx, sy);
+		/*forxy(noise) {
+			noise(p) = Walker::curlNoiseVec2fAt(p, noiseTimeDim * 10.0);
+		}*/
+		auto noiseTex = gtex(noise);
+		auto walkerTex2 = shade2(walkerTex, noiseTex,
+			"vec2 noiseVal = fetch2(tex2);"
+			"_out = fetch3(tex, tc + noiseVal);"
+			);
+
+		auto walkerTexB = gpuBlur2_4::run(walkerTex2, 2);
+		auto walkerTex3 = shade2(walkerTex2, walkerTexB,
 			"vec3 c = fetch3();"
 			"vec3 hsl = rgb2hsl(c);"
 			"hsl.z /= .5;"
@@ -528,11 +374,8 @@ struct SApp : AppBasic {
 			ShadeOpts(),
 			FileCache::get("stuff.fs")
 			);
-		gl::draw(walkerTex2, getWindowBounds());
-
-		//CameraPersp camera;
+		gl::draw(walkerTex3, getWindowBounds());
 	}
-#endif
 };
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	return mainFuncImpl(new SApp());
