@@ -26,7 +26,6 @@ float noiseTimeDim = 0.0f;
 float heightmapTimeDim = 0.0f;
 const int MAX_AGE = 100;
 gl::Texture texToDraw;
-bool texOverride = false;
 gl::GlslProg shader;
 
 Array2D<float> img2(sx, sy); // heightmap based on tex rgb
@@ -241,16 +240,10 @@ struct SApp : AppBasic {
 		direction = getMousePos() - lastm;
 		lastm = getMousePos();
 	}
-	Vec2f reflect(Vec2f const & I, Vec2f const & N)
-	{
-		return I - N * N.dot(I) * 2.0f;
-	}
 	float noiseProgressSpeed;
 	
 	void draw()
 	{
-		::texOverride = false;
-
 		my_console::beginFrame();
 		sw::beginFrame();
 		static bool first = true;
@@ -277,7 +270,6 @@ struct SApp : AppBasic {
 
 		if(pause)
 			Sleep(50);
-		//Sleep(2000);
 	}
 	void updateIt() {
 		if(!pause) {
