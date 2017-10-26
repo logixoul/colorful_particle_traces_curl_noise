@@ -179,16 +179,9 @@ void updateConfig() {
 }
 
 struct SApp : AppBasic {
-	Rectf area;
-		
 	void setup()
 	{
-		//keys2['0']=keys2['1']=keys2['2']=keys2['3']=true;
-		//_MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
-
 		_controlfp(_DN_FLUSH, _MCW_DN);
-
-		area = Rectf(0, 0, (float)sx-1, (float)sy-1).inflated(Vec2f::zero());
 
 		glClampColor(GL_CLAMP_FRAGMENT_COLOR, GL_FALSE);
 		glClampColor(GL_CLAMP_READ_COLOR, GL_FALSE);
@@ -278,7 +271,6 @@ struct SApp : AppBasic {
 		
 		renderIt();
 
-		/*Sleep(50);*/my_console::clr();
 		sw::endFrame();
 		cfg1::print();
 		my_console::endFrame();
