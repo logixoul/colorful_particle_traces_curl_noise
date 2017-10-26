@@ -237,21 +237,6 @@ struct SApp : AppBasic {
 	{
 		mouseDown_[e.isLeft() ? 0 : e.isMiddle() ? 1 : 2] = false;
 	}
-	Vec2f direction;
-	Vec2f lastm;
-	void mouseDrag(MouseEvent e)
-	{
-		mm();
-	}
-	void mouseMove(MouseEvent e)
-	{
-		mm();
-	}
-	void mm()
-	{
-		direction = getMousePos() - lastm;
-		lastm = getMousePos();
-	}
 	float noiseProgressSpeed;
 	
 	void draw()
