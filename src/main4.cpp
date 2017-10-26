@@ -25,7 +25,6 @@ bool keys[256];
 float noiseTimeDim = 0.0f;
 const int MAX_AGE = 200;
 gl::Texture texToDraw;
-bool texOverride = false;
 
 float mouseX, mouseY;
 bool pause;
@@ -257,8 +256,6 @@ struct SApp : AppBasic {
 	
 	void draw()
 	{
-		::texOverride = false;
-
 		my_console::beginFrame();
 		sw::beginFrame();
 		static bool first = true;
