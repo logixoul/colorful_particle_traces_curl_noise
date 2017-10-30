@@ -24,7 +24,6 @@ bool mouseDown_[3];
 bool keys[256];
 float noiseTimeDim = 0.0f;
 const int MAX_AGE = 200;
-gl::Texture texToDraw;
 
 float mouseX, mouseY;
 bool pause;
@@ -243,8 +242,6 @@ struct SApp : AppBasic {
 	{
 		my_console::beginFrame();
 		sw::beginFrame();
-		static bool first = true;
-		first = false;
 
 		wsx = getWindowSize().x;
 		wsy = getWindowSize().y;
@@ -319,18 +316,9 @@ struct SApp : AppBasic {
 			}
 			glPopAttrib();
 		}
-		Array2D<Vec2f> noise(sx, sy);
-		/*forxy(noise) {
-			noise(p) = Walker::curlNoiseVec2fAt(p, noiseTimeDim * 10.0);
-		}*/
-		auto noiseTex = gtex(noise);
-		auto walkerTex2 = shade2(walkerTex, noiseTex,
-			"vec2 noiseVal = fetch2(tex2);"
-			"_out = fetch3(tex, tc + noiseVal);"
-			);
-
-		auto walkerTexB = gpuBlur2_4::run(walkerTex2, 2);
-		auto walkerTex3 = shade2(walkerTex2, walkerTexB,
+		
+		auto walkerTexB = gpuBlur2_4::run(walkerTex, 2);
+		auto walkerTex3 = shade2(walkerTex, walkerTexB,
 			"vec3 c = fetch3();"
 			"vec3 hsl = rgb2hsl(c);"
 			"hsl.z /= .5;"
@@ -342,7 +330,101 @@ struct SApp : AppBasic {
 			ShadeOpts(),
 			FileCache::get("stuff.fs")
 			);
-		gl::draw(walkerTex3, getWindowBounds());
+
+		auto walkerTexM = walkerTex3;
+		for(int i = 0; i < 6; i++) {
+			walkerTexM = medianFilter(walkerTexM);
+		}
+
+		auto walkerTex4 = shade2(walkerTex3, walkerTexM,
+			"vec3 c3 = fetch3();"
+			"c3 = mix(vec3(28.0/255.0), vec3(232.0/255.0), c3);"
+			"vec3 cM = fetch3(tex2);"
+			"cM = mix(vec3(36.0/255.0), vec3(219.0/255.0), cM);"
+			"_out = blendOverlay(c3, cM);"
+			//"_out = cM;"
+			,
+			ShadeOpts(),
+			"float blendOverlay(float base, float blend) {"
+			"	return base<0.5?(2.0*base*blend):(1.0-2.0*(1.0-base)*(1.0-blend));"
+			"}"
+			""
+			"vec3 blendOverlay(vec3 base, vec3 blend) {"
+			"	return vec3(blendOverlay(base.r,blend.r),blendOverlay(base.g,blend.g),blendOverlay(base.b,blend.b));"
+			"}"
+			);
+
+		gl::draw(walkerTex4, getWindowBounds());
+	}
+
+	gl::Texture medianFilter(gl::Texture in) {
+		return shade2(in,
+			"float toSort[9];"
+			"\n"
+			"#define CSWAP(a,b) { float t = max(toSort[a],toSort[b]); toSort[a] = min(toSort[a],toSort[b]); toSort[b] = t; }"
+			"\n"
+			"int i = 0;"
+			"for(int x = -1; x <= 1; x++) {"
+			"	for(int y = -1; y <= 1; y++) {"
+			"		vec3 c = fetch3(tex, tc + tsize * vec2(x, y));"
+			"		toSort[i] = pack(c);"
+			"		i++;"
+			"	}"
+			"}"
+			"CSWAP(0,1)"
+			"CSWAP(2,3)"
+			"CSWAP(4,5)"
+			"CSWAP(7,8)"
+			"CSWAP(0,2)"
+			"CSWAP(1,3)"
+			"CSWAP(6,8)"
+			"CSWAP(1,2)"
+			"CSWAP(6,7)"
+			"CSWAP(5,8)"
+			"CSWAP(4,7)"
+			"CSWAP(3,8)"
+			"CSWAP(4,6)"
+			"CSWAP(5,7)"
+			"CSWAP(5,6)"
+			"CSWAP(2,7)"
+			"CSWAP(0,5)"
+			"CSWAP(1,6)"
+			"CSWAP(3,7)"
+			"CSWAP(0,4)"
+			"CSWAP(1,5)"
+			"CSWAP(3,6)"
+			"CSWAP(1,4)"
+			"CSWAP(2,5)"
+			"CSWAP(2,4)"
+			"CSWAP(3,5)"
+			"CSWAP(3,4)"
+			"vec3 median = unpack(toSort[4]);"
+			"_out = median;"
+			, ShadeOpts(),
+			FileCache::get("stuff.fs") +
+				"float quant(float x)"
+				"{"
+				"	x = clamp(x,0.,1.);"
+				"	return floor(x*255.);"
+				"}"
+				""
+				"float pack(vec3 c)"
+				"{	"
+				"	float lum = (c.x+c.y+c.z)*(1./3.);"
+				""
+				"	return quant(c.x) + quant(c.y)*256. + quant(lum) * 65536.;"
+				"}"
+				""
+				"vec3 unpack(float x)"
+				"{"
+				"	float lum = floor(x * (1./65536.)) * (1./255.);"
+				"	vec3 c;"
+				"	c.x = floor(mod(x,256.)) 			* (1./255.);"
+				"	c.y = floor(mod(x*(1./256.),256.)) * (1./255.);"
+				"	c.z = lum * 3. - c.y - c.x;"
+				"	return c;"
+				"}"
+			);
 	}
 };
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
