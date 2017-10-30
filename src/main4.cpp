@@ -16,7 +16,7 @@
 
 // baseline: 18fps
 
-int wsx=1000, wsy = 1000 * (800.0f / 1280.0f);
+int wsx=700, wsy = 700;
 int scale = 1;
 int sx = wsx / scale;
 int sy = wsy / scale;
@@ -33,10 +33,11 @@ Vec3f complexToColor_HSV(Vec2f comp) {
 	float hue = (float)M_PI+(float)atan2(comp.y,comp.x);
 	hue /= (float)(2*M_PI);
 	float lightness = comp.length();
-	lightness = .5f;
+	lightness = 1.0f;
 	//lightness /= lightness + 1.0f;
-	HslF hsl(hue, 1.0f, lightness);
- 	return FromHSL(hsl);
+	/*HslF hsl(hue, 1.0f, lightness);
+ 	return FromHSL(hsl);*/
+	return (Vec3f&)ci::hsvToRGB(Vec3f(hue, 1.0f, lightness));
 }
 
 // https://www.shadertoy.com/view/4dK3zG
@@ -316,7 +317,55 @@ struct SApp : AppBasic {
 			}
 			glPopAttrib();
 		}
-		
+		globaldict["noiseTimeDim100"] = noiseTimeDim * 100;
+		auto velocity = shade2(walkerTex,
+			"float nscale = 5;"
+			"vec2 pf = tc * texSize / texSize.x;"
+			"vec2 vel = vec2(0.0);"
+			"for(int i = 0; i < 1; i++) {"
+			"	nscale *= 2.0f;"
+			/*"	vel.x += raw_noise_3d(pf.x * nscale, pf.y * nscale, noiseTimeDim100) / nscale;"
+			"	vel.y += raw_noise_3d(pf.x * nscale, pf.y * nscale, noiseTimeDim100 + 1.0) / nscale;"*/
+			"	vel = curlNoise(pf, noiseTimeDim100) * 1.0;"
+			"}"
+			"_out.rg = vel * 0.6;"
+			,
+			ShadeOpts(),
+			FileCache::get("simplexnoise3d.fs.glsl") +
+				"int numDetailsX = 5;"
+				"int nscale = numDetailsX;"
+				"float noiseXAt(vec2 p, float z) {"
+				"	float noiseX = raw_noise_3d(p.x * nscale, p.y * nscale, z);"
+				"	return noiseX;"
+				"}"
+				""
+				"float noiseYAt(vec2 p, float z) {"
+				"	float noiseY = raw_noise_3d(p.x * nscale, p.y * nscale + numDetailsX, z);"
+				"	return noiseY;"
+				"}"
+				"float raw_noise_3d(vec2 xy, float z) {"
+				"	return raw_noise_3d(xy.x, xy.y, z);"
+				"}"
+				"vec2 curlNoise(vec2 p, float z) {"
+				"	vec2 eps = tsize * 1.0;"
+					"float noiseXAbove = raw_noise_3d(p * nscale - vec2(0, 1) * eps, z);"
+					"float noiseXBelow = raw_noise_3d(p * nscale + vec2(0, 1) * eps, z);"
+					"float noiseYOnLeft = raw_noise_3d(p * nscale - vec2(1, 0) * eps + numDetailsX, z);"
+					"float noiseYOnRight = raw_noise_3d(p * nscale + vec2(1, 0) * eps + numDetailsX, z);"
+					"return vec2(noiseXBelow - noiseXAbove, -(noiseYOnRight - noiseYOnLeft)) / (2.0 * eps);"
+				"}"
+			);
+		walkerTex = shade2(walkerTex, velocity, FileCache::get("forward_convect.glsl"));
+		//velocity = shade2(velocity, velocity, FileCache::get("forward_convect.glsl"));
+		walkerTex = shade2(walkerTex,
+			"vec3 c = fetch3();"
+			"vec3 hsv = rgb2hsv(c);"
+			"hsv[1] = mix(0.5, 1.0, hsv[1]);"
+			"c = hsv2rgb(hsv);"
+			"_out = c;",
+			ShadeOpts(),
+			FileCache::get("stuff.fs"));
+
 		auto walkerTexB = gpuBlur2_4::run(walkerTex, 2);
 		auto walkerTex3 = shade2(walkerTex, walkerTexB,
 			"vec3 c = fetch3();"
@@ -355,6 +404,7 @@ struct SApp : AppBasic {
 			);
 
 		gl::draw(walkerTex4, getWindowBounds());
+		//gl::draw(velocity, getWindowBounds());
 	}
 
 	gl::Texture medianFilter(gl::Texture in) {

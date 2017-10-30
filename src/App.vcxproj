@@ -151,8 +151,10 @@
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="forward_convect.glsl" />
     <None Include="hcl_lib.fs" />
     <None Include="OldCode.txt" />
+    <None Include="simplexnoise3d.fs.glsl" />
     <None Include="stuff.fs">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </None>
