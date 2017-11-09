@@ -455,18 +455,18 @@ int RGBE_ReadPixels_RLE(FILE *fp, float *data, int scanline_width,
   return RGBE_RETURN_SUCCESS;
 }
 
-Array2D<Vec3f> loadRgbeFile(string const& filename)
+Array2D<vec3> loadRgbeFile(string const& filename)
 {
 	FILE* f = fopen(filename.c_str(),"rb");
 	int image_width, image_height;
 	RGBE_ReadHeader(f,&image_width,&image_height, NULL);
-	Array2D<Vec3f> image(image_width, image_height);
+	Array2D<vec3> image(image_width, image_height);
 	RGBE_ReadPixels_RLE(f,(float*)image.data,image_width,image_height);
 	fclose(f);
 	return image;
 }
 
-void writeRgbeFile(string const& filename, Vec2i const& size, float* data)
+void writeRgbeFile(string const& filename, ivec2 const& size, float* data)
 {
 	auto f = fopen(filename.c_str(),"wb");
 	RGBE_WriteHeader(f, size.x, size.y,NULL);

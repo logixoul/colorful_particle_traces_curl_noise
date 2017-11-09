@@ -95,16 +95,16 @@ namespace Stopwatch
 	}
 }
 
-void copyCvtData(ci::Surface8u const& surface, Array2D<Vec3f> dst) {
+void copyCvtData(ci::Surface8u const& surface, Array2D<vec3> dst) {
 	forxy(dst) {
 		ColorAT<uint8_t> inPixel = surface.getPixel(p);
-		dst(p) = Vec3f(inPixel.r, inPixel.g, inPixel.b) / 255.0f;
+		dst(p) = vec3(inPixel.r, inPixel.g, inPixel.b) / 255.0f;
 	}
 }
-void copyCvtData(ci::SurfaceT<float> const& surface, Array2D<Vec3f> dst) {
+void copyCvtData(ci::SurfaceT<float> const& surface, Array2D<vec3> dst) {
 	forxy(dst) {
 		ColorAT<float> inPixel = surface.getPixel(p);
-		dst(p) = Vec3f(inPixel.r, inPixel.g, inPixel.b);
+		dst(p) = vec3(inPixel.r, inPixel.g, inPixel.b);
 	}
 }
 void copyCvtData(ci::SurfaceT<float> const& surface, Array2D<float> dst) {

@@ -47,7 +47,7 @@ vec3 hsl2rgb(vec3 hsl) {
     
     if (hsl.y == 0.0) {
         rgb = vec3(hsl.z); // Luminance
-    } else {
+	} else {
         float f2;
         
         if (hsl.z < 0.5)
@@ -60,7 +60,7 @@ vec3 hsl2rgb(vec3 hsl) {
         rgb.r = hue2rgb(f1, f2, hsl.x + (1.0/3.0));
         rgb.g = hue2rgb(f1, f2, hsl.x);
         rgb.b = hue2rgb(f1, f2, hsl.x - (1.0/3.0));
-    }   
+	}
     return rgb;
 }
 // https://gist.github.com/obviousjim/6004420
@@ -77,7 +77,7 @@ vec3 rgb2hsl( vec3 _input ){
 	l = ( cMax + cMin ) / 2.0;
 	if ( cMax > cMin ) {
 		float cDelta = cMax - cMin;
-        
+
 		s = l < .05 ? cDelta / ( cMax + cMin ) : cDelta / ( 2.0 - ( cMax + cMin ) );
 
 		// hue

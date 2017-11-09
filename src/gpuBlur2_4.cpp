@@ -12,16 +12,16 @@ extern bool keys[];
 
 namespace gpuBlur2_4 {
 
-	gl::Texture run(gl::Texture src, int lvls) {
+	gl::TextureRef run(gl::TextureRef src, int lvls) {
 		auto state = Shade().tex(src).expr("fetch3()").run();
 	
 		for(int i = 0; i < lvls; i++) {
 			state = singleblur(state, .5, .5);
 		}
-		state = upscale(state, src.getSize());
+		state = upscale(state, src->getSize());
 		return state;
 	}
-	gl::Texture run_longtail(gl::Texture src, int lvls, float lvlmul) {
+	gl::TextureRef run_longtail(gl::TextureRef src, int lvls, float lvlmul) {
 		auto zoomstate = Shade().tex(src).expr("fetch3()").run();
 		auto accstate = Shade().tex(src).expr("vec3(0.0)").run();
 		
@@ -37,8 +37,8 @@ namespace gpuBlur2_4 {
 		}
 		for(int i = 0; i < lvls; i++) {
 			zoomstate = singleblur(zoomstate, .5, .5);
-			if(zoomstate.getWidth() < 1 || zoomstate.getHeight() < 1) throw runtime_error("too many blur levels");
-			auto upscaled = upscale(zoomstate, src.getWidth() / (float)zoomstate.getWidth(), src.getHeight() / (float)zoomstate.getHeight());
+			if(zoomstate->getWidth() < 1 || zoomstate->getHeight() < 1) throw runtime_error("too many blur levels");
+			auto upscaled = upscale(zoomstate, src->getWidth() / (float)zoomstate->getWidth(), src->getHeight() / (float)zoomstate->getHeight());
 			globaldict["_mul"] = weights[i];
 			accstate = shade2(accstate, upscaled,
 				"vec3 acc = fetch3(tex);"
@@ -58,10 +58,10 @@ namespace gpuBlur2_4 {
 			float nfactor = 1.0 / (width * sqrt(twoPi));
 			return nfactor * exp(-f*f/(width*width));
 	}
-	gl::Texture upscale(gl::Texture src, ci::Vec2i toSize) {
-		return upscale(src, float(toSize.x) / src.getWidth(), float(toSize.y) / src.getHeight());
+	gl::TextureRef upscale(gl::TextureRef src, ci::ivec2 toSize) {
+		return upscale(src, float(toSize.x) / src->getWidth(), float(toSize.y) / src->getHeight());
 	}
-	gl::Texture upscale(gl::Texture src, float hscale, float vscale) {
+	gl::TextureRef upscale(gl::TextureRef src, float hscale, float vscale) {
 		globaldict["gaussW"]=getGaussW();
 		globaldict["sqrtTwoPi"] = sqrt(twoPi);
 		string lib =
@@ -101,7 +101,7 @@ namespace gpuBlur2_4 {
 		auto vscaled = shade2(hscaled, shader, ShadeOpts().scale(1.0f, vscale), lib);
 		return vscaled;
 	}
-	gl::Texture singleblur(gl::Texture src, float hscale, float vscale) {
+	gl::TextureRef singleblur(gl::TextureRef src, float hscale, float vscale) {
 		// gauss(0.0) = 1.0
 		// gauss(2.0) = 0.1
 		//globaldict["gaussW0"]

@@ -10,8 +10,8 @@
 
 #include "util.h"
 
-Array2D<Vec3f> loadRgbeFile(string const& filename);
-void writeRgbeFile(string const& filename, Vec2i const& size, float* data);
+Array2D<vec3> loadRgbeFile(string const& filename);
+void writeRgbeFile(string const& filename, ivec2 const& size, float* data);
 
 #endif /* _H_RGBE */
 
