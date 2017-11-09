@@ -3,7 +3,7 @@
 
 class PlanCache {
 public:
-	static fftwf_plan getPlan(Vec2i arrSize, int direction, int flags) {
+	static fftwf_plan getPlan(ivec2 arrSize, int direction, int flags) {
 		Key key = { arrSize, direction };
 		if(cache.find(key) == cache.end()) {
 			Array2D<fftwf_complex> in(arrSize, nofill());
@@ -16,7 +16,7 @@ public:
 	}
 private:
 	struct Key {
-		Vec2i arrSize;
+		ivec2 arrSize;
 		int direction;
 	};
 	struct KeyComparator {

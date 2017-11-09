@@ -14,12 +14,14 @@
     <ProjectGuid>{74202EDD-91D2-4D2A-B0B6-355CEB16E6BE}</ProjectGuid>
     <RootNamespace>AppApp</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -49,7 +51,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>z:\stuff\Dev\misc\cinder\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>z:\stuff\Dev\referenced\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -61,11 +63,11 @@
       <AdditionalOptions>/Zm200 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ResourceCompile>
-      <AdditionalIncludeDirectories>..\z:\stuff\Dev\misc\cinder\include;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\z:\stuff\Dev\referenced\include;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>libfftw3f-3.lib;cairo-static.lib;cinder_d.lib;opencv_core320.lib;opencv_imgproc320.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>z:\stuff\Dev\misc\cinder_lite\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libfftw3f-3.lib;cinder_d.lib;opencv_core320.lib;opencv_imgproc320.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>z:\stuff\Dev\referenced\lib;z:\stuff\Dev\referenced\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -77,7 +79,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>z:\stuff\Dev\misc\cinder_lite\include;C:\Users\Stefan\Desktop\code_\include\lib\src\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>z:\stuff\Dev\referenced\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -95,11 +97,11 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <ResourceCompile>
-      <AdditionalIncludeDirectories>..\z:\stuff\Dev\misc\cinder\include;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\z:\stuff\Dev\referenced\include;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>libfftw3f-3.lib;cairo-static.lib;cinder_lite.lib;opencv_core320.lib;opencv_imgproc320.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>z:\stuff\Dev\misc\cinder_lite\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libfftw3f-3.lib;cinder.lib;opencv_core320.lib;opencv_imgproc320.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>z:\stuff\Dev\referenced\lib;z:\stuff\Dev\referenced\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <SubSystem>Windows</SubSystem>
@@ -120,32 +122,35 @@
     <ClCompile Include="gpuBlur2_4.cpp" />
     <ClCompile Include="hdrwrite.cpp" />
     <ClCompile Include="main4.cpp" />
-    <ClCompile Include="mainfunc_impl.cpp" />
-    <ClCompile Include="my_console.cpp" />
+    <ClCompile Include="PerlinCalculator2D.cpp" />
     <ClCompile Include="precompiled.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">precompiled.h</PrecompiledHeaderFile>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">precompiled.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="qdebug.cpp" />
     <ClCompile Include="shade.cpp" />
     <ClCompile Include="simplexnoise.cpp" />
+    <ClCompile Include="stefanfw.cpp" />
     <ClCompile Include="stuff.cpp" />
     <ClCompile Include="sw.cpp" />
     <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="bicubic.h" />
     <ClInclude Include="cfg1.h" />
     <ClInclude Include="colorspaces.h" />
     <ClInclude Include="easyfft.h" />
     <ClInclude Include="gpgpu.h" />
     <ClInclude Include="gpuBlur2_4.h" />
     <ClInclude Include="hdrwrite.h" />
-    <ClInclude Include="mainfunc_impl.h" />
-    <ClInclude Include="my_console.h" />
+    <ClInclude Include="PerlinCalculator2D.h" />
     <ClInclude Include="precompiled.h" />
+    <ClInclude Include="qdebug.h" />
     <ClInclude Include="shade.h" />
     <ClInclude Include="simplexnoise.h" />
+    <ClInclude Include="stefanfw.h" />
     <ClInclude Include="stuff.h" />
     <ClInclude Include="sw.h" />
     <ClInclude Include="util.h" />
@@ -159,6 +164,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </None>
     <None Include="OldCode.txt" />
+    <None Include="simplexnoise3d.fs.glsl" />
     <None Include="stuff.fs">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </None>

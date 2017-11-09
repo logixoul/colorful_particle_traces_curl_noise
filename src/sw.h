@@ -3,7 +3,7 @@
 #include "util.h"
 #include <map>
 #include <string>
-#include "my_console.h"
+#include "qdebug.h"
 
 struct sw {
 	struct Entry {

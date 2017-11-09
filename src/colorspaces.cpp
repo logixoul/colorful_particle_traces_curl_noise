@@ -1,7 +1,7 @@
 #include "precompiled.h"
 #include "colorspaces.h"
 
-Vec3f FromHSL(HslF const& hsl)
+vec3 FromHSL(HslF const& hsl)
 {
     float v;
     float r, g, b;
@@ -61,7 +61,7 @@ Vec3f FromHSL(HslF const& hsl)
                 break;
         }
     }
-    return Vec3f(r, g, b);
+    return vec3(r, g, b);
 }
 
 HslF::HslF(float h, float s, float l)
@@ -71,7 +71,7 @@ HslF::HslF(float h, float s, float l)
 	this->l = l;
 }
 
-HslF::HslF(ci::Vec3f const& rgb)
+HslF::HslF(ci::vec3 const& rgb)
 {
 	float r = rgb.x, g = rgb.y, b = rgb.z;
 	float max = std::max(r, std::max(g, b)), min = std::min(r, std::min(g, b));
