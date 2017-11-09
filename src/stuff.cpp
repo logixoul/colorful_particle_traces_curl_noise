@@ -1,5 +1,6 @@
 #include "precompiled.h"
 #include "stuff.h"
+#include "gpgpu.h"
 
 int denormal_check::num;
 
@@ -15,16 +16,16 @@ string FileCache::get(string filename) {
 	return db[filename];
 }
 
-Array2D<Vec3f> resize(Array2D<Vec3f> src, Vec2i dstSize, const ci::FilterBase &filter)
+Array2D<vec3> resize(Array2D<vec3> src, ivec2 dstSize, const ci::FilterBase &filter)
 {
 	ci::SurfaceT<float> tmpSurface(
-		(float*)src.data, src.w, src.h, /*rowBytes*/sizeof(Vec3f) * src.w, ci::SurfaceChannelOrder::RGB);
+		(float*)src.data, src.w, src.h, /*rowBytes*/sizeof(vec3) * src.w, ci::SurfaceChannelOrder::RGB);
 	auto resizedSurface = ci::ip::resizeCopy(tmpSurface, tmpSurface.getBounds(), dstSize, filter);
-	Array2D<Vec3f> resultArray = resizedSurface;
+	Array2D<vec3> resultArray = resizedSurface;
 	return resultArray;
 }
 
-Array2D<float> resize(Array2D<float> src, Vec2i dstSize, const ci::FilterBase &filter)
+Array2D<float> resize(Array2D<float> src, ivec2 dstSize, const ci::FilterBase &filter)
 {
 #if 0
 	ci::ChannelT<float> tmpSurface(
@@ -58,7 +59,7 @@ vector<float> getGaussianKernel(int ksize, float sigma) {
 	return result;
 }
 
-float sigmaFromKsize(int ksize) {
+float sigmaFromKsize(float ksize) {
 	float sigma = 0.3*((ksize-1)*0.5 - 1) + 0.8;
 	return sigma;
 }
@@ -69,4 +70,51 @@ float ksizeFromSigma(float sigma) {
 	if(ksize % 2 == 0)
 		ksize++;
 	return ksize;
+}
+
+void disableGLReadClamp() {
+	glClampColor(GL_CLAMP_READ_COLOR, GL_FALSE);
+}
+
+void enableDenormalFlushToZero() {
+	_controlfp(_DN_FLUSH, _MCW_DN);
+}
+
+void draw(const gl::TextureRef &texture, const Area &srcArea, const Rectf &dstRect, gl::GlslProgRef const& glsl)
+{
+	if (!texture)
+		return;
+
+	auto ctx = gl::context();
+
+	Rectf texRect = texture->getAreaTexCoords(srcArea);
+
+	gl::ScopedVao vaoScp(ctx->getDrawTextureVao());
+	gl::ScopedBuffer vboScp(ctx->getDrawTextureVbo());
+	gl::ScopedTextureBind texBindScope(texture);
+
+	gl::ScopedGlslProg glslScp(glsl);
+	glsl->uniform("uTex0", 0);
+	glsl->uniform("uPositionOffset", dstRect.getUpperLeft());
+	glsl->uniform("uPositionScale", dstRect.getSize());
+	glsl->uniform("uTexCoordOffset", texRect.getUpperLeft());
+	glsl->uniform("uTexCoordScale", texRect.getSize());
+
+	ctx->setDefaultShaderVars();
+	ctx->drawArrays(GL_TRIANGLE_STRIP, 0, 4);
+}
+
+void draw(const gl::TextureRef &texture, const Rectf &dstRect, gl::GlslProgRef const& glsl)
+{
+	if (!texture)
+		return;
+
+	draw(texture, texture->getBounds(), dstRect, glsl);
+}
+
+gl::TextureRef redToLuminance(gl::TextureRef const& in) {
+	return shade2(in,
+		"_out.rgb = vec3(fetch1());",
+		ShadeOpts().ifmt(GL_RGBA16F)
+	);
 }
