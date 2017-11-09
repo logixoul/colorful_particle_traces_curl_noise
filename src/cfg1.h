@@ -1,6 +1,6 @@
 #pragma once
 #include "precompiled.h"
-#include "my_console.h"
+#include "qdebug.h"
 
 class cfg1
 {

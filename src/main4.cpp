@@ -6,11 +6,12 @@
 #include "gpuBlur2_4.h"
 #include "cfg1.h"
 #include "sw.h"
-#include "my_console.h"
+#include "stefanfw.h"
+
 #include "hdrwrite.h"
 #include <float.h>
 #include "simplexnoise.h"
-#include "mainfunc_impl.h"
+
 #include "colorspaces.h"
 #include "easyfft.h"
 
@@ -18,34 +19,34 @@
 
 int wsx=700, wsy = 700;
 int scale = 1;
-int sx = wsx / scale;
-int sy = wsy / scale;
-bool mouseDown_[3];
-bool keys[256];
+int sx = wsx / ::scale;
+int sy = wsy / ::scale;
+
+
 float noiseTimeDim = 0.0f;
 const int MAX_AGE = 200;
 
-float mouseX, mouseY;
-bool pause;
-bool keys2[256];
 
-Vec3f complexToColor_HSV(Vec2f comp) {
+bool pause;
+
+
+vec3 complexToColor_HSV(vec2 comp) {
 	float hue = (float)M_PI+(float)atan2(comp.y,comp.x);
 	hue /= (float)(2*M_PI);
-	float lightness = comp.length();
+	float lightness = length(comp);
 	lightness = 1.0f;
 	//lightness /= lightness + 1.0f;
 	/*HslF hsl(hue, 1.0f, lightness);
  	return FromHSL(hsl);*/
-	return (Vec3f&)ci::hsvToRGB(Vec3f(hue, 1.0f, lightness));
+	return (vec3&)ci::hsvToRgb(vec3(hue, 1.0f, lightness));
 }
 
 // https://www.shadertoy.com/view/4dK3zG
-Vec3f complexToColor_fromShaderToy(Vec2f comp) {
+vec3 complexToColor_fromShaderToy(vec2 comp) {
 	float hue = (float)M_PI+(float)atan2(comp.y,comp.x);
 	hue /= (float)(2*M_PI);
 	float normal_value = hue;
-    Vec3f color;
+    vec3 color;
     if(normal_value<0.0) normal_value = 0.0;
     if(normal_value>1.0) normal_value = 1.0;
     float v1 = 1.0/7.0;
@@ -107,28 +108,28 @@ Vec3f complexToColor_fromShaderToy(Vec2f comp) {
     return color * 1.5f / 255.0f;
 }
 
-Vec3f complexToColor(Vec2f comp) {
+vec3 complexToColor(vec2 comp) {
 	float hue = (float)M_PI+(float)atan2(comp.y,comp.x);
 	hue /= (float)(2*M_PI);
-	float lightness = comp.length();
+	float lightness = length(comp);
 	//lightness = .5f;
 	//lightness /= lightness + 1.0f;
 	//HslF hsl(hue, 1.0f, lightness);
  	//return FromHSL(hsl);
-	Vec3f colors[] = {
-		//Vec3f(0,0,0),
-		Vec3f(15,131,174),
-		Vec3f(246,24,199),
-		Vec3f(148,255,171),
-		Vec3f(251,253,84)
+	vec3 colors[] = {
+		//vec3(0,0,0),
+		vec3(15,131,174),
+		vec3(246,24,199),
+		vec3(148,255,171),
+		vec3(251,253,84)
 	};
 	int colorCount = 4;
 	float pos = hue*(colorCount - .01f);
 	int posint1 = floor(pos);
 	int posint2 = (posint1 + 1) % colorCount;
 	float posFract = pos - posint1;
-	Vec3f color1 = colors[posint1];
-	Vec3f color2 = colors[posint2];
+	vec3 color1 = colors[posint1];
+	vec3 color2 = colors[posint2];
 	return lerp(color1, color2, posFract) / 255.0f;
 }
 
@@ -136,47 +137,46 @@ int numDetailsX = 5;
 float nscale = numDetailsX / (float)sx;
 
 struct Walker {
-	Vec2f pos;
+	vec2 pos;
 	int age;
-	Vec3f color;
-	Vec2f lastMove;
+	vec3 color;
+	vec2 lastMove;
 
 	float alpha() {
 		return min((age/(float)MAX_AGE)*5.0, 1.0);
 	}
 
 	Walker() {
-		pos = Vec2f(ci::randFloat(0, sx), ci::randFloat(0, sy));
+		pos = vec2(ci::randFloat(0, sx), ci::randFloat(0, sy));
 		age = ci::randInt(0, MAX_AGE);
-		lastMove = Vec2f::zero();
 	}
-	static float noiseXAt(Vec2f p, float z) {
+	static float noiseXAt(vec2 p, float z) {
 		float noiseX = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale, z);
 		return noiseX;
 	}
 	
-	static float noiseYAt(Vec2f p, float z) {
+	static float noiseYAt(vec2 p, float z) {
 		float noiseY = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale + numDetailsX, z);
 		return noiseY;
 	}
-	static Vec2f noiseVec2fAt(Vec2f p, float z) {
-		return Vec2f(noiseXAt(p, z), noiseYAt(p, z));
+	static vec2 noisevec2At(vec2 p, float z) {
+		return vec2(noiseXAt(p, z), noiseYAt(p, z));
 	}
-	static Vec2f curlNoiseVec2fAt(Vec2f p, float z) {
+	static vec2 curlNoisevec2At(vec2 p, float z) {
 		float eps = 1;
-		float noiseXAbove = noiseXAt(p - Vec2f(0, eps), z);
-		float noiseXBelow = noiseXAt(p + Vec2f(0, eps), z);
-		float noiseYOnLeft = noiseYAt(p - Vec2f(eps, 0), z);
-		float noiseYOnRight = noiseYAt(p + Vec2f(eps, 0), z);
-		return Vec2f(noiseXBelow - noiseXAbove, -(noiseYOnRight - noiseYOnLeft)) / (2.0f * eps);
+		float noiseXAbove = noiseXAt(p - vec2(0, eps), z);
+		float noiseXBelow = noiseXAt(p + vec2(0, eps), z);
+		float noiseYOnLeft = noiseYAt(p - vec2(eps, 0), z);
+		float noiseYOnRight = noiseYAt(p + vec2(eps, 0), z);
+		return vec2(noiseXBelow - noiseXAbove, -(noiseYOnRight - noiseYOnLeft)) / (2.0f * eps);
 	}
 	void update() {
-		Vec2f toAdd = curlNoiseVec2fAt(pos, noiseTimeDim) * 50.0f;
+		vec2 toAdd = curlNoisevec2At(pos, noiseTimeDim) * 50.0f;
 		//toAdd.y -= 1.0f;
-		pos += toAdd / scale;
+		pos += toAdd / float(::scale);
 		color = complexToColor_HSV(toAdd);
 		lastMove = toAdd;
-		//color = Vec3f::one();
+		//color = vec3::one();
 
 		if(pos.x < 0) pos.x += sx;
 		if(pos.y < 0) pos.y += sy;
@@ -192,81 +192,44 @@ vector<Walker> walkers;
 void updateConfig() {
 }
 
-struct SApp : AppBasic {
+struct SApp : App {
 	void setup()
 	{
-		_controlfp(_DN_FLUSH, _MCW_DN);
+		enableDenormalFlushToZero();
 
-		glClampColor(GL_CLAMP_FRAGMENT_COLOR, GL_FALSE);
-		glClampColor(GL_CLAMP_READ_COLOR, GL_FALSE);
-		glClampColor(GL_CLAMP_VERTEX_COLOR, GL_FALSE);
+		createConsole();
+		disableGLReadClamp();
+		stefanfw::eventHandler.subscribeToEvents(*this);
 		setWindowSize(wsx, wsy);
 
-		glEnable(GL_POINT_SMOOTH);
-
-		for(int i = 0; i < 4000 / sq(scale); i++) {
+		for(int i = 0; i < 4000 / sq(::scale); i++) {
 			walkers.push_back(Walker());
 		}
 	}
 	void keyDown(KeyEvent e)
 	{
-		keys[e.getChar()] = true;
-		if(e.isControlDown()&&e.getCode()!=KeyEvent::KEY_LCTRL)
-		{
-			keys2[e.getChar()] = !keys2[e.getChar()];
-			return;
-		}
-		if(keys['r'])
-		{
-		}
+		
 		if(keys['p'] || keys['2'])
 		{
 			pause = !pause;
 		}
 	}
-	void keyUp(KeyEvent e)
-	{
-		keys[e.getChar()] = false;
-	}
-	
-	void mouseDown(MouseEvent e)
-	{
-		mouseDown_[e.isLeft() ? 0 : e.isMiddle() ? 1 : 2] = true;
-	}
-	void mouseUp(MouseEvent e)
-	{
-		mouseDown_[e.isLeft() ? 0 : e.isMiddle() ? 1 : 2] = false;
-	}
 	float noiseProgressSpeed;
 	
-	void draw()
+	void update()
 	{
-		my_console::beginFrame();
-		sw::beginFrame();
+		stefanfw::beginFrame();
+		stefanUpdate();
+		stefanDraw();
+		stefanfw::endFrame();
+	}
 
-		wsx = getWindowSize().x;
-		wsy = getWindowSize().y;
 
-		mouseX = getMousePos().x / (float)wsx;
-		mouseY = getMousePos().y / (float)wsy;
-		noiseProgressSpeed=cfg1::getOpt("noiseProgressSpeed", .00008f,
+	void stefanUpdate() {
+		noiseProgressSpeed = cfg1::getOpt("noiseProgressSpeed", .00008f,
 			[&]() { return keys['s']; },
 			[&]() { return expRange(mouseY, 0.01f, 100.0f); });
-		
-		gl::clear(Color(0, 0, 0));
 
-		updateIt();
-		
-		renderIt();
-
-		sw::endFrame();
-		cfg1::print();
-		my_console::endFrame();
-
-		if(pause)
-			Sleep(50);
-	}
-	void updateIt() {
 		if(!pause) {
 			noiseTimeDim += noiseProgressSpeed;
 
@@ -277,45 +240,64 @@ struct SApp : AppBasic {
 				}
 			}
 		}
+
+		if (pause)
+			Sleep(50);
 	}
-	void renderIt() {
+	void stefanDraw() {
+		gl::clear(Color(0, 0, 0));
+
 		const float t = getElapsedFrames();
 		static Array2D<float> sizeSource(sx, sy);
 		static auto sizeSourceTex = gtex(sizeSource);
 		string bg = "vec3 bg = vec3(0.0);";
 		static auto walkerTex = shade2(sizeSourceTex, "_out = bg;", ShadeOpts(), bg);
-		Matrix22f rotMat = Matrix22f::createRotation(sin(t/10.0));
+		mat2 rotMat;
+		mat3 rotMat3;
+		rotMat3 = glm::rotate(rotMat3, std::sin(t / 10.0f));
+		rotMat = mat2(rotMat3);
 		if(!pause) {
 			walkerTex = shade2(walkerTex, "_out = mix(fetch3(), bg, 0.007);", ShadeOpts(), bg);
-			glPushAttrib(GL_ALL_ATTRIB_BITS);
-			glUseProgram(0);
+			
 			glPointSize(2.5);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			//glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-			glEnable(GL_BLEND);
+			std::vector<vec4> color;
+			std::vector<vec2> pos;
 			{
+				foreach(Walker& walker, walkers) {
+					auto c = vec4(walker.color, walker.alpha()*.3f);
+					// todo: change rotMat to a rotated unit vector here
+					auto rotated = safeNormalized(rotMat * walker.lastMove) * 30.0f;
+					color.push_back(c); pos.push_back(walker.pos+rotated);
+					color.push_back(c); pos.push_back(walker.pos-rotated);
+				}
+				gl::popMatrices();
+			}
+			{
+				gl::ScopedBlend sb1(true);
+				gl::ScopedBlend(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+				gl::ScopedViewport(0, 0, sx, sy);
+				//gl::ScopedBlend(GL_SRC_ALPHA, GL_ONE);
+				gl::pushMatrices();
+				gl::setMatricesWindow(sx, sy, true);
+				static auto colorDef = gl::ShaderDef().color();
+				static auto colorProg = gl::getStockShader(colorDef);
+				gl::ScopedGlslProg sgp(colorProg);
+
 				beginRTT(walkerTex);
 				{
-					gl::pushMatrices();
-					gl::setMatricesWindow(sx, sy, true);
-					{
-						glBegin(GL_POINTS);
-						{
-							foreach(Walker& walker, walkers) {
-								auto& c = walker.color;
-								glColor4f(c.x, c.y, c.z, walker.alpha()*.3f);
-								auto rotated = rotMat.transformVec(walker.lastMove).safeNormalized() * 30.0f;
-								glVertex2f(walker.pos+rotated);
-								glVertex2f(walker.pos-rotated);
-							}
-						}
-						glEnd();
-					}
-					gl::popMatrices();
+					gl::VboRef colorVbo = gl::Vbo::create(GL_ARRAY_BUFFER, color, GL_STATIC_DRAW);
+					gl::VboRef posVbo = gl::Vbo::create(GL_ARRAY_BUFFER, pos, GL_STATIC_DRAW);
+					geom::BufferLayout colorLayout, posLayout;
+					colorLayout.append(geom::COLOR, 4, sizeof(decltype(color[0])), 0);
+					posLayout.append(geom::POSITION, 2, sizeof(decltype(pos[0])), 0);
+
+					gl::VboMeshRef vboMesh = gl::VboMesh::create(color.size(), GL_POINTS,
+					{ std::make_pair(colorLayout, colorVbo), std::make_pair(posLayout, posVbo) });
+					//glUseProgram(0);
+					gl::draw(vboMesh);
 				}
 				endRTT();
 			}
-			glPopAttrib();
 		}
 		globaldict["noiseTimeDim100"] = noiseTimeDim * 100;
 		auto velocity = shade2(walkerTex,
@@ -407,7 +389,7 @@ struct SApp : AppBasic {
 		//gl::draw(velocity, getWindowBounds());
 	}
 
-	gl::Texture medianFilter(gl::Texture in) {
+	gl::TextureRef medianFilter(gl::TextureRef in) {
 		return shade2(in,
 			"float toSort[9];"
 			"\n"
@@ -477,6 +459,5 @@ struct SApp : AppBasic {
 			);
 	}
 };
-int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
-	return mainFuncImpl(new SApp());
-}
+
+CINDER_APP(SApp, RendererGl)
