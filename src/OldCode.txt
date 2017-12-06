@@ -1,7 +1,7 @@
 		/*if(getElapsedFrames() > 50)
 		{
-			auto walkerImg = gettexdata<Vec3f>(walkerTex, GL_RGB, GL_FLOAT, walkerTex.getCleanBounds());
-			cv::Mat_<cv::Vec3f> walkerMat(walkerImg.h, walkerImg.w, (cv::Vec3f*)walkerImg.data);
+			auto walkerImg = gettexdata<vec3>(walkerTex, GL_RGB, GL_FLOAT, walkerTex.getCleanBounds());
+			cv::Mat_<cv::vec3> walkerMat(walkerImg.h, walkerImg.w, (cv::vec3*)walkerImg.data);
 			static Array2D<float> kernel = getKernel(Vec2i(20, 20));
 			static cv::Mat_<float> kernelMat(kernel.h, kernel.w, kernel.data);
 				cv::filter2D(walkerMat, walkerMat, -1, kernelMat, cv::Point(-1, -1), 0, cv::BORDER_WRAP);
@@ -12,7 +12,7 @@
 		
 #if 0
 	void renderComplexImg(Array2D<Complexf> in) {
-		Array2D<Vec3f> colored(in.Size());
+		Array2D<vec3> colored(in.Size());
 		forxy(in) {
 			Vec2f vec2f(in(p).real(), in(p).imag());
 			colored(p) = complexToColor_HSV(vec2f)/* * 10000.0f*/;
@@ -51,7 +51,7 @@
 		auto fdKernel = fft(sdKernel, FFTW_MEASURE);
 		return fdKernel;
 	}
-	Array2D<Vec3f> convolveLongtail(Array2D<Vec3f> in) {
+	Array2D<vec3> convolveLongtail(Array2D<vec3> in) {
 		/*static*/ Array2D<Complexf> fdKernel = getFdKernel(in.Size());
 		auto inChans = ::split(in);
 		for(int i = 0; i < inChans.size(); i++) {
@@ -107,7 +107,7 @@
 			glPopAttrib();
 		}
 
-		auto walkerImg = gettexdata<Vec3f>(walkerTex, GL_RGB, GL_FLOAT, walkerTex.getCleanBounds());
+		auto walkerImg = gettexdata<vec3>(walkerTex, GL_RGB, GL_FLOAT, walkerTex.getCleanBounds());
 		walkerImg = convolveLongtail(walkerImg);
 		auto walkerTex2 = gtex(walkerImg);
 

@@ -17,7 +17,7 @@
 
 // baseline: 18fps
 
-int wsx=1000, wsy = 1000 * (800.0f / 1280.0f);
+int wsx=1280, wsy = 720;
 int scale = 1;
 int sx = wsx / ::scale;
 int sy = wsy / ::scale;
@@ -196,7 +196,7 @@ struct SApp : App {
 	{
 		enableDenormalFlushToZero();
 
-		createConsole();
+		//createConsole();
 		disableGLReadClamp();
 		stefanfw::eventHandler.subscribeToEvents(*this);
 		setWindowSize(wsx, wsy);

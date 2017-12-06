@@ -11,9 +11,9 @@ float cubic(T val0, T val1, T t0, T t1, float x)
 		+ (x*x*x-2*x*x+x)*t0
 		+ (x*x*x-x*x)*t1;
 }
-Vec4f cubicCoefs(float x)
+vec4 cubicCoefs(float x)
 {
-	return Vec4f(
+	return vec4(
 		-.5 * (x*x*x-2*x*x+x),
 		+(1.5*x*x*x-2.5*x*x+1),
 		+(-1.5*x*x*x+2*x*x+.5*x),
@@ -25,7 +25,7 @@ T getBicubic(Array2D<T> src, vec2 p)
 {
 	return getBicubic(src, p.x, p.y);
 }
-float dot(Vec4f a, Vec4f b) {
+float dot(vec4 a, vec4 b) {
 	return a.x*b.x + a.y*b.y + a.z*b.z + a.w*b.w;
 }
 template<class T>
@@ -41,21 +41,21 @@ T getBicubic(Array2D<T> src, float xn, float yn)
 	float fractx = x - fx;
 	float fracty = y - fy;
 	
-	Vec4f xCoefs = cubicCoefs(fractx);
+	vec4 xCoefs = cubicCoefs(fractx);
 	T interpX1_prev = dot( 
-		Vec4f(src.wr(ix - 1, iy-1), src.wr(ix, iy-1), src.wr(ix + 1, iy-1), src.wr(ix + 2, iy-1)),
+		vec4(src.wr(ix - 1, iy-1), src.wr(ix, iy-1), src.wr(ix + 1, iy-1), src.wr(ix + 2, iy-1)),
 		xCoefs);
 	T interpX1 = dot(
-		Vec4f(src.wr(ix - 1, iy), src.wr(ix, iy), src.wr(ix + 1, iy), src.wr(ix + 2, iy)),
+		vec4(src.wr(ix - 1, iy), src.wr(ix, iy), src.wr(ix + 1, iy), src.wr(ix + 2, iy)),
 		xCoefs);
 	T interpX2 = dot(
-		Vec4f(src.wr(ix - 1, iy+1), src.wr(ix, iy+1), src.wr(ix + 1, iy+1), src.wr(ix + 2, iy+1)),
+		vec4(src.wr(ix - 1, iy+1), src.wr(ix, iy+1), src.wr(ix + 1, iy+1), src.wr(ix + 2, iy+1)),
 		xCoefs);
 	T interpX2_next = dot(
-		Vec4f(src.wr(ix - 1, iy+2), src.wr(ix, iy+2), src.wr(ix + 1, iy+2), src.wr(ix + 2, iy+2)),
+		vec4(src.wr(ix - 1, iy+2), src.wr(ix, iy+2), src.wr(ix + 1, iy+2), src.wr(ix + 2, iy+2)),
 		xCoefs);
 	T interpY = dot(
-		Vec4f(interpX1_prev, interpX1, interpX2, interpX2_next),
+		vec4(interpX1_prev, interpX1, interpX2, interpX2_next),
 		cubicCoefs(fracty));
 	return interpY;
 }
@@ -76,9 +76,9 @@ T getBicubic2(Array2D<T> src, float xn, float yn)
 	if(y < 0.0f && fy != y) { fy--; iy--; }
 	float fractx = x - fx;
 	
-	Vec4f xCoefs = cubicCoefs(fractx);
+	vec4 xCoefs = cubicCoefs(fractx);
 	T interpX1 = dot(
-		Vec4f(src.wr(ix - 1, iy), src.wr(ix, iy), src.wr(ix + 1, iy), src.wr(ix + 2, iy)),
+		vec4(src.wr(ix - 1, iy), src.wr(ix, iy), src.wr(ix + 1, iy), src.wr(ix + 2, iy)),
 		xCoefs);
 	return interpX1;
 }
