@@ -126,7 +126,7 @@
     <ClCompile Include="gpuBlur2_4.cpp" />
     <ClCompile Include="hdrwrite.cpp" />
     <ClCompile Include="main4.cpp" />
-    <ClCompile Include="PerlinCalculator2D.cpp" />
+    
     <ClCompile Include="precompiled.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">precompiled.h</PrecompiledHeaderFile>
@@ -149,7 +149,7 @@
     <ClInclude Include="gpgpu.h" />
     <ClInclude Include="gpuBlur2_4.h" />
     <ClInclude Include="hdrwrite.h" />
-    <ClInclude Include="PerlinCalculator2D.h" />
+    
     <ClInclude Include="precompiled.h" />
     <ClInclude Include="qdebug.h" />
     <ClInclude Include="shade.h" />
