@@ -18,7 +18,7 @@
                 // Ask msbuild to generate full paths for file names.
                 "/property:GenerateFullPaths=true",
 				"/t:build",
-				"/property:Configuration=Release",
+				"/property:Configuration=Debug",
 				//"/target:App:
             ],
 			"options": {

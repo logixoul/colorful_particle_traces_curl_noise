@@ -9,8 +9,9 @@ std::map<string,string> FileCache::db;
 string FileCache::get(string filename) {
 	if(db.find(filename)==db.end()) {
 		std::vector<unsigned char> buffer;
-		loadFile(buffer,filename);
+		loadFile(buffer,ci::app::getAssetPath(filename).string());
 		string bufferStr(buffer.data(), buffer.data() + buffer.size());
+		//string bufferStr = ci::app::loadString(ci::app::loadAsset(filename));
 		db[filename]=bufferStr;
 	}
 	return db[filename];

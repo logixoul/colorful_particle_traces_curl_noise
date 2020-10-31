@@ -8,7 +8,7 @@
 #include "sw.h"
 #include "stefanfw.h"
 
-
+#include "hdrwrite.h"
 #include <float.h>
 #include "simplexnoise.h"
 
@@ -269,7 +269,7 @@ struct SApp : App {
 					color.push_back(c); pos.push_back(walker.pos+rotated);
 					color.push_back(c); pos.push_back(walker.pos-rotated);
 				}
-				//gl::popMatrices();
+				gl::popMatrices();
 			}
 			{
 				gl::ScopedBlend sb1(true);
