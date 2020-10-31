@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+		"vector": "cpp",
+		"cmath": "cpp",
+		"algorithm": "cpp",
+		"xiosbase": "cpp",
+		"iosfwd": "cpp",
+		"xlocbuf": "cpp",
+		"queue": "cpp",
+		"stack": "cpp",
+		"xutility": "cpp"
+	}
+}
