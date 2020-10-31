@@ -19,8 +19,8 @@
 
 int wsx=1280, wsy = 720;
 int scale = 1;
-int sx = wsx / ::scale;
-int sy = wsy / ::scale;
+int sx() { return wsx / ::scale; }
+int sy() { return wsy / ::scale; }
 
 
 float noiseTimeDim = 0.0f;
@@ -133,7 +133,7 @@ vec3 complexToColor(vec2 comp) {
 }
 
 int numDetailsX = 5;
-float nscale = numDetailsX / (float)sx;
+float nscale = numDetailsX / (float)sx();
 
 struct Walker {
 	vec2 pos;
@@ -146,7 +146,7 @@ struct Walker {
 	}
 
 	Walker() {
-		pos = vec2(ci::randFloat(0, sx), ci::randFloat(0, sy));
+		pos = vec2(ci::randFloat(0, sx()), ci::randFloat(0, sy()));
 		age = ci::randInt(0, MAX_AGE);
 	}
 	static float noiseXAt(vec2 p, float z) {
@@ -177,10 +177,10 @@ struct Walker {
 		lastMove = toAdd;
 		//color = vec3::one();
 
-		if(pos.x < 0) pos.x += sx;
-		if(pos.y < 0) pos.y += sy;
-		pos.x = fmod(pos.x, sx);
-		pos.y = fmod(pos.y, sy);
+		if(pos.x < 0) pos.x += sx();
+		if(pos.y < 0) pos.y += sy();
+		pos.x = fmod(pos.x, sx());
+		pos.y = fmod(pos.y, sy());
 
 		age++;
 	}
@@ -199,7 +199,12 @@ struct SApp : App {
 		//createConsole();
 		disableGLReadClamp();
 		stefanfw::eventHandler.subscribeToEvents(*this);
-		setWindowSize(wsx, wsy);
+		//setWindowSize(wsx, wsy);
+		setFullScreen(true);
+		getWindow()->setBorderless(true);
+		wsx = getWindowWidth();
+		wsy = getWindowHeight();
+
 
 		for(int i = 0; i < 4000 / sq(::scale); i++) {
 			walkers.push_back(Walker());
@@ -247,7 +252,7 @@ struct SApp : App {
 		gl::clear(Color(0, 0, 0));
 
 		const float t = getElapsedFrames();
-		static Array2D<float> sizeSource(sx, sy);
+		static Array2D<float> sizeSource(sx(), sy());
 		static auto sizeSourceTex = gtex(sizeSource);
 		string bg = "vec3 bg = vec3(0.0);";
 		static auto walkerTex = shade2(sizeSourceTex, "_out = bg;", ShadeOpts(), bg);
@@ -274,10 +279,10 @@ struct SApp : App {
 			{
 				gl::ScopedBlend sb1(true);
 				gl::ScopedBlend(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-				gl::ScopedViewport(0, 0, sx, sy);
+				gl::ScopedViewport(0, 0, sx(), sy());
 				//gl::ScopedBlend(GL_SRC_ALPHA, GL_ONE);
 				gl::pushMatrices();
-				gl::setMatricesWindow(sx, sy, true);
+				gl::setMatricesWindow(sx(), sy(), true);
 				static auto colorDef = gl::ShaderDef().color();
 				static auto colorProg = gl::getStockShader(colorDef);
 				gl::ScopedGlslProg sgp(colorProg);
