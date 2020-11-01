@@ -105,7 +105,7 @@ struct Walker {
 		return vec2(noiseXBelow - noiseXAbove, -(noiseYOnRight - noiseYOnLeft)) / (2.0f * eps);
 	}
 	void update() {
-		vec2 toAdd = curlNoisevec2At(pos, noiseTimeDim) * 50.0f;
+		vec2 toAdd = curlNoisevec2At(pos, noiseTimeDim) * 200.0f;
 		//toAdd.y -= 1.0f;
 		pos += toAdd / float(::scale);
 		color = complexToColor_HSV(toAdd);
