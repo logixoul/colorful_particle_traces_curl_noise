@@ -206,9 +206,9 @@ struct SApp : App {
 				foreach(Walker& walker, walkers) {
 					auto c = vec4(walker.color, walker.alpha()*.3f);
 					// todo: change rotMat to a rotated unit vector here
-					auto rotated = safeNormalized(rotMat * walker.lastMove) * 30.0f;
+					auto rotated = safeNormalized(rotMat * walker.lastMove) * 30.0f * 0.0f;
 					color.push_back(c); pos.push_back(walker.pos+rotated);
-					color.push_back(c); pos.push_back(walker.pos-rotated);
+					//color.push_back(c); pos.push_back(walker.pos-rotated);
 				}
 				//gl::popMatrices();
 			}
