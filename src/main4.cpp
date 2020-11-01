@@ -85,12 +85,12 @@ struct Walker {
 		age = ci::randInt(0, MAX_AGE);
 	}
 	static float noiseXAt(vec2 p, float z) {
-		float noiseX = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale, z);
+		float noiseX = ::raw_noise_3d(p.x * nscale, p.y * nscale, z);
 		return noiseX;
 	}
 	
 	static float noiseYAt(vec2 p, float z) {
-		float noiseY = ::octave_noise_3d(3, .5, 1.0, p.x * nscale, p.y * nscale + numDetailsX, z);
+		float noiseY = ::raw_noise_3d(p.x * nscale, p.y * nscale + numDetailsX, z);
 		return noiseY;
 	}
 	static vec2 noisevec2At(vec2 p, float z) {
