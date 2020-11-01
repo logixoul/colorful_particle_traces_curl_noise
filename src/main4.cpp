@@ -14,6 +14,7 @@
 
 #include "colorspaces.h"
 #include "easyfft.h"
+//#include <opencv2/videoio.hpp>
 
 // baseline: 18fps
 
@@ -126,6 +127,7 @@ void updateConfig() {
 }
 
 struct SApp : App {
+	//cv::VideoWriter videoWriter = cv::VideoWriter("outVideo", CV_FOURCC_MACRO('P', 'I', 'M', '1'), 30, cv::Size(1280,720), true);
 	void setup()
 	{
 		enableDenormalFlushToZero();
