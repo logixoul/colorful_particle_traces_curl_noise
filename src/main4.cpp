@@ -386,7 +386,7 @@ struct SApp : App {
 					auto c = vec4(walker.color, walker.alpha());
 					color.push_back(c); pos.push_back(walker.pos);
 				}
-				gl::popMatrices();
+				//gl::popMatrices();
 			}
 			{
 				gl::ScopedBlend sb1(true);
