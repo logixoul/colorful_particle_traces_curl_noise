@@ -20,17 +20,46 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #pragma once
 #include "precompiled.h"
 
-struct sw {
-	struct Entry {
-		int index;
-		string desc;
-		float elapsed;
-		float startTime;
-		int indent;
+struct TextureCacheKey {
+	ivec2 size;
+	GLenum ifmt;
+	bool allocateMipmaps = false;
+	
+	bool operator==(const TextureCacheKey &other) const
+	{
+		return size == other.size
+			&& ifmt == other.ifmt
+			&& allocateMipmaps == other.allocateMipmaps
+			;
+	}
+};
+
+namespace std {
+
+	template <>
+	struct hash<TextureCacheKey>
+	{
+		std::size_t operator()(const TextureCacheKey& k) const
+		{
+			return k.size.x ^ k.size.y ^ k.ifmt ^ k.allocateMipmaps;
+		}
 	};
-	//static void start();
-	//static void printElapsed(string desc = "");
-	static void timeit(string desc, std::function<void()> func);
-	static void beginFrame();
-	static void endFrame();
+
+}
+
+class TextureCache
+{
+public:
+	static TextureCache* instance();
+	gl::TextureRef get(TextureCacheKey const& key);
+	static void clearCaches();
+
+	static void printTextures();
+
+	static void deleteTexture(Tex tex);
+
+private:
+	TextureCache();
+
+	std::unordered_map<TextureCacheKey, vector<gl::TextureRef>> cache;
 };

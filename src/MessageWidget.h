@@ -18,19 +18,37 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #pragma once
-#include "precompiled.h"
+#include "Widget.h"
+#include "SimpleGUI/SimpleGUI.h"
 
-struct sw {
-	struct Entry {
-		int index;
-		string desc;
-		float elapsed;
-		float startTime;
-		int indent;
-	};
-	//static void start();
-	//static void printElapsed(string desc = "");
-	static void timeit(string desc, std::function<void()> func);
-	static void beginFrame();
-	static void endFrame();
+using namespace mowa::sgui;
+
+enum class ButtonType {
+	None,
+	Ok
 };
+
+class MessageWidget : public Widget
+{
+public:
+	MessageWidget(ButtonType bType = ButtonType::None);
+	void draw() override;
+
+	void onMouseDown(CGMouseButtonEventArgs ev) override;
+
+	void onMouseUp(CGMouseButtonEventArgs ev) override;
+
+	void onMouseDrag(CGMouseMoveEventArgs ev) override;
+
+	void onMouseMove(CGMouseMoveEventArgs ev) override;
+
+	std::string text;
+
+	SimpleGUI* gui;
+
+	ButtonControl* button = nullptr;
+
+private:
+	void computeLayout();
+};
+

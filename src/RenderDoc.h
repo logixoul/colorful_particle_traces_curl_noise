@@ -18,19 +18,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #pragma once
-#include "precompiled.h"
+#include "renderdoc_app.h"
 
-struct sw {
-	struct Entry {
-		int index;
-		string desc;
-		float elapsed;
-		float startTime;
-		int indent;
-	};
-	//static void start();
-	//static void printElapsed(string desc = "");
-	static void timeit(string desc, std::function<void()> func);
-	static void beginFrame();
-	static void endFrame();
+
+class RenderDoc
+{
+public:
+	static void init();
+	static RENDERDOC_API_1_0_2 *rdoc_api;
+
+	static void StartFrameCapture();
+	static void EndFrameCapture();
 };
+

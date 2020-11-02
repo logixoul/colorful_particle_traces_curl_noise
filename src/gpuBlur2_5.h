@@ -19,18 +19,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #pragma once
 #include "precompiled.h"
+#include "TextureCache.h"
 
-struct sw {
-	struct Entry {
-		int index;
-		string desc;
-		float elapsed;
-		float startTime;
-		int indent;
-	};
-	//static void start();
-	//static void printElapsed(string desc = "");
-	static void timeit(string desc, std::function<void()> func);
-	static void beginFrame();
-	static void endFrame();
-};
+namespace gpuBlur2_5 {
+	gl::TextureRef run(gl::TextureRef src, int lvls);
+	gl::TextureRef run_longtail(gl::TextureRef src, int lvls, float lvlmul, float hscale = .5f, float vscale = .5f);
+	float getGaussW();
+	float gauss(float f, float width);
+	gl::TextureRef upscale(gl::TextureRef src, ci::ivec2 toSize);
+	gl::TextureRef upscale(gl::TextureRef src, float hscale, float vscale);
+	gl::TextureRef singleblur(gl::TextureRef src, float hscale, float vscale, GLenum wrap = GL_CLAMP_TO_BORDER);
+}
+
+namespace gpuBlur = gpuBlur2_5;

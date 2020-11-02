@@ -17,20 +17,30 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#pragma once
 #include "precompiled.h"
+#include "CrossThreadCallQueue.h"
 
-struct sw {
-	struct Entry {
-		int index;
-		string desc;
-		float elapsed;
-		float startTime;
-		int indent;
-	};
-	//static void start();
-	//static void printElapsed(string desc = "");
-	static void timeit(string desc, std::function<void()> func);
-	static void beginFrame();
-	static void endFrame();
-};
+// disabling all thread_local stuff because of RenderDoc. https://github.com/baldurk/renderdoc/issues/1743
+//thread_local CrossThreadCallQueue crossThreadCallQueue;
+
+CrossThreadCallQueue::CrossThreadCallQueue()
+{
+}
+
+void CrossThreadCallQueue::pushCall(function<void()>&& func)
+{
+	toExecute.push(func);
+}
+
+void CrossThreadCallQueue::execAll()
+{
+	for (;;) {
+		function<void()> func;
+		if (toExecute.try_pop(func, false)) {
+			func();
+		}
+		else {
+			break;
+		}
+	}
+}

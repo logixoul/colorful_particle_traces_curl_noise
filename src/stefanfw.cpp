@@ -1,5 +1,26 @@
+/*
+Tonemaster - HDR software
+Copyright (C) 2018, 2019, 2020 Stefan Monov <logixoul@gmail.com>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+
 #include "precompiled.h"
 #include "stefanfw.h"
+#include "MyTimer.h"
+#include "sw.h"
 
 float mouseX, mouseY;
 bool keys[256];
@@ -7,6 +28,7 @@ bool keys2[256];
 bool mouseDown_[3];
 
 namespace stefanfw {
+
 
 	EventHandler eventHandler;
 
@@ -18,15 +40,14 @@ namespace stefanfw {
 		wsx = app->getWindowWidth();
 		wsy = app->getWindowHeight();
 
-		auto relMousePos = app->getMousePos() - app->getWindowPos();
-		::mouseX = relMousePos.x / (float)wsx;
-		::mouseY = relMousePos.y / (float)wsy;
+		auto relMousePos = app->getMousePos();
+		::mouseX = relMousePos.x / (float)app->getDisplay()->getWidth();
+		::mouseY = relMousePos.y / (float)app->getDisplay()->getHeight();
 	}
 
 	void endFrame() {
 		sw::endFrame();
-		cfg1::print();
-		std::cout << std::flush;
+		TimerManager::update();
 	}
 
 	// todo make this take ref

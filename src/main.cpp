@@ -4,7 +4,7 @@
 #include "stuff.h"
 #include "shade.h"
 #include "gpgpu.h"
-#include "gpuBlur2_4.h"
+#include "gpuBlur2_5.h"
 #include "cfg1.h"
 #include "sw.h"
 #include "stefanfw.h"
@@ -195,7 +195,7 @@ struct SApp : App {
 	{
 		enableDenormalFlushToZero();
 
-		createConsole();
+		//createConsole();
 		disableGLReadClamp();
 		stefanfw::eventHandler.subscribeToEvents(*this);
 		setWindowSize(wsx, wsy);
@@ -344,7 +344,7 @@ struct SApp : App {
 		auto walkerTex2 = gtex(walkerImg);
 
 		//walkerTex = gpuBlur2_4::run_longtail(walkerTex, 3, 1.0);
-		auto walkerTex3 = shade2(walkerTex, walkerTex2, "_out = tc.x > .5 ? fetch3() : fetch3(tex2) * 600.0;");
+		auto walkerTex3 = shade2(walkerTex, walkerTex2, "_out.rgb = tc.x > .5 ? fetch3() : fetch3(tex2) * 600.0;");
 
 		if(::texOverride) {
 			gl::draw(texToDraw, getWindowBounds());
@@ -371,12 +371,12 @@ struct SApp : App {
 	}
 	void stefanDraw() {
 		gl::clear(Color(0, 0, 0));
-		static Array2D<float> sizeSource(sx, sy);
+		static Array2D<vec3> sizeSource(sx, sy);
 		static auto sizeSourceTex = gtex(sizeSource);
 		string bg = "vec3 bg = vec3(0.0);";
-		static auto walkerTex = shade2(sizeSourceTex, "_out = bg;", ShadeOpts(), bg);
+		static auto walkerTex = shade2(sizeSourceTex, "_out.rgb = bg;", ShadeOpts(), bg);
 		if(!pause) {
-			walkerTex = shade2(walkerTex, "_out = mix(fetch3(), bg, 0.007);", ShadeOpts(), bg);
+			walkerTex = shade2(walkerTex, "_out.rgb = mix(fetch3(), bg, 0.007);", ShadeOpts(), bg);
 			
 			glPointSize(2.5);
 			std::vector<vec4> color;
@@ -415,7 +415,7 @@ struct SApp : App {
 				endRTT();
 			}
 		}
-		auto walkerTexB = gpuBlur2_4::run(walkerTex, 2);
+		auto walkerTexB = gpuBlur2_5::run(walkerTex, 2);
 		auto walkerTex2 = shade2(walkerTex, walkerTexB,
 			"vec3 c = fetch3();"
 			"vec3 hsl = rgb2hsl(c);"
@@ -424,7 +424,7 @@ struct SApp : App {
 			"hsl.z = pow(hsl.z, 3.0);"
 			"c = hsl2rgb(hsl);"
 			"c += fetch3(tex2);"
-			"_out = c;",
+			"_out.rgb = c;",
 			ShadeOpts(),
 			FileCache::get("stuff.fs")
 			);

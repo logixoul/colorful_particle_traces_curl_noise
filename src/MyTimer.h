@@ -18,19 +18,41 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #pragma once
-#include "precompiled.h"
 
-struct sw {
-	struct Entry {
-		int index;
-		string desc;
-		float elapsed;
-		float startTime;
-		int indent;
-	};
-	//static void start();
-	//static void printElapsed(string desc = "");
-	static void timeit(string desc, std::function<void()> func);
-	static void beginFrame();
-	static void endFrame();
+class MyTimer
+{
+public:
+	enum Unit { Seconds, Frames };
+	MyTimer();
+
+	void setInterval(double sec);
+	void start();
+
+	double interval;
+
+	bool isStopped() const;
+
+	double getSeconds() const;
+
+	// TODO
+	//signal<void()> timeout;
+
+	static void singleShot(double intervalSec, function<void()> callback);
+	
+private:
+	ci::Timer timerImpl;
+	Unit unit;
+	int startedOnFrame;
+	friend class TimerManager;
+};
+
+class TimerManager {
+public:
+	static void update();
+
+private:
+	static void registerTimer(MyTimer* timer);
+	static vector<MyTimer*> timers;
+	static vector<MyTimer*> newTimers;
+	friend class MyTimer;
 };

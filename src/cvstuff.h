@@ -20,17 +20,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #pragma once
 #include "precompiled.h"
 
-struct sw {
-	struct Entry {
-		int index;
-		string desc;
-		float elapsed;
-		float startTime;
-		int indent;
-	};
-	//static void start();
-	//static void printElapsed(string desc = "");
-	static void timeit(string desc, std::function<void()> func);
-	static void beginFrame();
-	static void endFrame();
-};
+void mm(string name, cv::Mat mat);
+
+void to01(cv::Mat& mat);
+
+gl::TextureRef gtex(cv::Mat a, GLenum ifmt = 0, GLenum fmt=0);
+
+cv::Mat dlToMat(gl::TextureRef tex, int mipLevel = 0);
+
+cv::Mat dlToMat3(gl::TextureRef tex, int mipLevel = 0);
+
+gl::TextureRef t(gl::TextureRef in);
+
+void publish(string desc, cv::Mat mat);
+
+void publish(string desc, gl::TextureRef tex);
+
+extern void my_imshow(string desc, cv::Mat mat);

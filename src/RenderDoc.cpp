@@ -17,20 +17,28 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#pragma once
 #include "precompiled.h"
+#include "RenderDoc.h"
 
-struct sw {
-	struct Entry {
-		int index;
-		string desc;
-		float elapsed;
-		float startTime;
-		int indent;
-	};
-	//static void start();
-	//static void printElapsed(string desc = "");
-	static void timeit(string desc, std::function<void()> func);
-	static void beginFrame();
-	static void endFrame();
-};
+RENDERDOC_API_1_0_0 *RenderDoc::rdoc_api = nullptr;
+
+void RenderDoc::init()
+{
+	if (HMODULE mod = GetModuleHandleA("renderdoc.dll"))
+	{
+		pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)GetProcAddress(mod, "RENDERDOC_GetAPI");
+
+		int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void **)&rdoc_api);
+
+	}
+}
+
+void RenderDoc::StartFrameCapture()
+{
+	if (rdoc_api) rdoc_api->StartFrameCapture(NULL, NULL);
+}
+
+void RenderDoc::EndFrameCapture()
+{
+	if (rdoc_api) rdoc_api->EndFrameCapture(NULL, NULL);
+}
