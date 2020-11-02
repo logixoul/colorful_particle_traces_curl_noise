@@ -15,6 +15,8 @@
 
 #include "colorspaces.h"
 #include "easyfft.h"
+#include <opencv2/videoio.hpp>
+#include <opencv2/videoio/registry.hpp>
 
 int wsx=1280, wsy = 720;
 int scale = 1;
@@ -191,9 +193,19 @@ void updateConfig() {
 }
 
 struct SApp : App {
+	cv::VideoWriter mVideoWriter = cv::VideoWriter("testVideo.mp4", //cv::CAP_FFMPEG, // has to be absent because otherwise i get isOpened=false
+	cv::VideoWriter::fourcc('m', 'p', '4', 'v'), // lx: has to be lowercase, because otherwise i get isOpened=false.
+	60, cv::Size(720,1280), true);
+
 	void setup()
 	{
+		cout << "isOpened " << mVideoWriter.isOpened() << endl;
+		//cout << "backend " << mVideoWriter.getBackendName() << endl;
+
+		//auto test = cv::videoio_registry::getWriterBackends();
+
 		enableDenormalFlushToZero();
+
 
 		//createConsole();
 		disableGLReadClamp();
@@ -214,6 +226,10 @@ struct SApp : App {
 	}
 	float noiseProgressSpeed;
 	
+	void cleanup() override {
+		mVideoWriter.release();
+	}
+
 	void update()
 	{
 		stefanfw::beginFrame();
@@ -425,16 +441,46 @@ struct SApp : App {
 			"c = hsl2rgb(hsl);"
 			"c += fetch3(tex2);"
 			"_out.rgb = c;",
-			ShadeOpts(),
+			ShadeOpts().ifmt(GL_RGB32F),
 			FileCache::get("stuff.fs")
 			);
 		gl::draw(walkerTex2, getWindowBounds());
 
 		//CameraPersp camera;
+		
+		//auto surf = copyWindowSurface();
+		//auto mat = dlToMat(walkerTex2, 0);
+		//mat.convertTo(mat, CV_8UC3, 255.0f);
+		auto mat = cv::Mat(1280, 720, CV_8UC3);
+		mat += 60.0f; // test
+		mVideoWriter.write(mat);
+	}
+	
+	static int matTypeFromTex(gl::TextureRef tex) {
+		switch (tex->getInternalFormat()) {
+		case GL_R32F: return CV_32F; break;
+		case GL_RGB32F: return CV_32FC3; break;
+		default: throw 0;
+		}
+	}
+
+	cv::Mat dlToMat(gl::TextureRef tex, int mipLevel) {
+		ivec2 sz = gl::Texture2d::calcMipLevelSize(mipLevel, tex->getWidth(), tex->getHeight());
+		cv::Mat data = cv::Mat(sz.y, sz.x, matTypeFromTex(tex));
+
+		bind(tex);
+		glGetTexImage(GL_TEXTURE_2D, mipLevel, GL_RGB, GL_FLOAT, data.data);
+
+		return data;
 	}
 #endif
 };
 
-CINDER_APP(SApp, RendererGl)
+CINDER_APP(SApp, RendererGl(),
+	[&](ci::app::App::Settings *settings)
+{
+	//bool developer = (bool)ifstream(getAssetPath("developer"));
+	settings->setConsoleWindowEnabled(true);
+})
 
 #endif
