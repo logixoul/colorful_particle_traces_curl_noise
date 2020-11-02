@@ -195,7 +195,7 @@ void updateConfig() {
 struct SApp : App {
 	cv::VideoWriter mVideoWriter = cv::VideoWriter("testVideo.mp4", //cv::CAP_FFMPEG, // has to be absent because otherwise i get isOpened=false
 	cv::VideoWriter::fourcc('m', 'p', '4', 'v'), // lx: has to be lowercase, because otherwise i get isOpened=false.
-	60, cv::Size(720,1280), true);
+	60, cv::Size(wsx,wsy), true);
 
 	void setup()
 	{
@@ -451,7 +451,7 @@ struct SApp : App {
 		//auto surf = copyWindowSurface();
 		//auto mat = dlToMat(walkerTex2, 0);
 		//mat.convertTo(mat, CV_8UC3, 255.0f);
-		auto mat = cv::Mat(1280, 720, CV_8UC3);
+		auto mat = cv::Mat(720, 1280, CV_8UC3);
 		mat += 60.0f; // test
 		mVideoWriter.write(mat);
 	}
