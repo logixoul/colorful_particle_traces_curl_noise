@@ -449,10 +449,10 @@ struct SApp : App {
 		//CameraPersp camera;
 		
 		//auto surf = copyWindowSurface();
-		//auto mat = dlToMat(walkerTex2, 0);
-		//mat.convertTo(mat, CV_8UC3, 255.0f);
-		auto mat = cv::Mat(720, 1280, CV_8UC3);
-		mat += 60.0f; // test
+		auto mat = dlToMat(walkerTex2, 0);
+		mat.convertTo(mat, CV_8UC3, 255.0f);
+		//auto mat = cv::Mat(720, 1280, CV_8UC3);
+		//mat += 60.0f; // test
 		mVideoWriter.write(mat);
 	}
 	
