@@ -72,6 +72,9 @@ template<> inline string typeToString<int>() {
 template<> inline string typeToString<ivec2>() {
 	return "ivec2";
 }
+template<> inline string typeToString<vec2>() {
+	return "vec2";
+}
 struct ShadeOpts
 {
 	ShadeOpts();

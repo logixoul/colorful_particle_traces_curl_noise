@@ -236,7 +236,7 @@ gl::TextureRef shade(vector<gl::TextureRef> const& texv, std::string const& fsha
 		} catch(gl::GlslProgCompileExc const& e) {
 			cout << "gl::GlslProgCompileExc: " << e.what() << endl;
 			cout << "source:" << endl;
-			cout << completeVshader << endl;
+			cout << completeFshader << endl;
 			string s; cin >> s;
 			throw;
 		}
