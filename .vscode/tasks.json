@@ -18,8 +18,7 @@
                 // Ask msbuild to generate full paths for file names.
                 "/property:GenerateFullPaths=true",
 				"/t:build",
-				"/property:Configuration=Debug",
-				//"/target:App:
+				"/property:Configuration=Release",
             ],
 			"options": {
 				"cwd": "${workspaceFolder}"

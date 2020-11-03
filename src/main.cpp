@@ -16,7 +16,7 @@
 #include <opencv2/videoio.hpp>
 //#include <opencv2/videoio/registry.hpp>
 
-int wsx=1280, wsy = 720;
+int wsx=1920, wsy = 1080;
 int scale = 1;
 int sx = wsx / ::scale;
 int sy = wsy / ::scale;
@@ -231,7 +231,7 @@ struct SApp : App {
 		mat.convertTo(mat, CV_8UC3, 255.0f);
 		//auto mat = cv::Mat(720, 1280, CV_8UC3);
 		//mat += 60.0f; // test
-		mVideoWriter.write(mat);
+		//mVideoWriter.write(mat);
 	}
 	
 	static int matTypeFromTex(gl::TextureRef tex) {
