@@ -8,6 +8,7 @@
 		"xlocbuf": "cpp",
 		"queue": "cpp",
 		"stack": "cpp",
-		"xstring": "cpp"
+		"xstring": "cpp",
+		"complex": "cpp"
 	}
 }

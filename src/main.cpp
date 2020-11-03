@@ -165,6 +165,11 @@ struct SApp : App {
 	}
 
 	void stefanDraw() {
+		auto t = getElapsedFrames() * 0.01f;
+		//mat3 rotMat3 = glm::rotate(rotMat3, std::sin(t / 10.0f));
+		//mat2 rotMat = mat2(rotMat3);
+		auto refVec = vec2(sinf(t), cosf(t));
+
 		gl::clear(Color(0, 0, 0));
 		static Array2D<vec3> sizeSource(sx, sy);
 		static auto sizeSourceTex = gtex(sizeSource);
@@ -178,7 +183,13 @@ struct SApp : App {
 			std::vector<vec2> pos;
 			{
 				foreach(Walker& walker, walkers) {
-					auto c = vec4(walker.color, walker.alpha());
+					auto walkerColor = walker.color;
+					float hueDot = dot(refVec, safeNormalized(walker.lastMove));
+					hueDot = max(0.0f, hueDot);
+					hueDot = max(0.0f, 1-hueDot);
+					walkerColor *= hueDot;
+					auto c = vec4(walkerColor, walker.alpha());
+					
 					color.push_back(c); pos.push_back(walker.pos);
 				}
 				//gl::popMatrices();
