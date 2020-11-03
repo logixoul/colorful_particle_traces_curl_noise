@@ -16,7 +16,7 @@
 #include <opencv2/videoio.hpp>
 //#include <opencv2/videoio/registry.hpp>
 
-int wsx=1920, wsy = 1080;
+int wsx=1280, wsy = 720;
 int scale = 1;
 int sx = wsx / ::scale;
 int sy = wsy / ::scale;
@@ -79,6 +79,7 @@ struct Walker {
 		//toAdd.y -= 1.0f;
 		pos += toAdd / float(::scale);
 		color = complexToColor_HSV(toAdd);
+		//color *= min(1.0f, age / (MAX_AGE / 40.0f));
 		lastMove = toAdd;
 		//color = vec3::one();
 
@@ -227,10 +228,8 @@ struct SApp : App {
 		//CameraPersp camera;
 		
 		//auto surf = copyWindowSurface();
-		auto mat = dlToMat(walkerTex2, 0);
-		mat.convertTo(mat, CV_8UC3, 255.0f);
-		//auto mat = cv::Mat(720, 1280, CV_8UC3);
-		//mat += 60.0f; // test
+		//auto mat = dlToMat(walkerTex2, 0);
+		//mat.convertTo(mat, CV_8UC3, 255.0f);
 		//mVideoWriter.write(mat);
 	}
 	
