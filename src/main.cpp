@@ -239,9 +239,9 @@ struct SApp : App {
 		//CameraPersp camera;
 		
 		//auto surf = copyWindowSurface();
-		//auto mat = dlToMat(walkerTex2, 0);
-		//mat.convertTo(mat, CV_8UC3, 255.0f);
-		//mVideoWriter.write(mat);
+		auto mat = dlToMat(walkerTex2, 0);
+		mat.convertTo(mat, CV_8UC3, 255.0f);
+		mVideoWriter.write(mat);
 	}
 	
 	static int matTypeFromTex(gl::TextureRef tex) {
