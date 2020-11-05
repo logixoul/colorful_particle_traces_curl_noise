@@ -221,7 +221,14 @@ struct SApp : App {
 				endRTT();
 			}
 		}
-		auto walkerTexB = gpuBlur2_5::run(walkerTex, 2);
+		auto walkerTexThres = shade2(walkerTex,
+			"vec3 c = fetch3();"
+			"float avg = dot(c, vec3(1)/3.0f);"
+			"if(avg < .25)"
+			"	 c = vec3(0);"
+			"_out.rgb = c;"
+		);
+		auto walkerTexB = gpuBlur2_5::run(walkerTexThres, 4);
 		auto walkerTex2 = shade2(walkerTex, walkerTexB,
 			"vec3 c = fetch3();"
 			"vec3 hsl = rgb2hsl(c);"
@@ -239,9 +246,9 @@ struct SApp : App {
 		//CameraPersp camera;
 		
 		//auto surf = copyWindowSurface();
-		auto mat = dlToMat(walkerTex2, 0);
+		/*auto mat = dlToMat(walkerTex2, 0);
 		mat.convertTo(mat, CV_8UC3, 255.0f);
-		mVideoWriter.write(mat);
+		mVideoWriter.write(mat);*/
 	}
 	
 	static int matTypeFromTex(gl::TextureRef tex) {
