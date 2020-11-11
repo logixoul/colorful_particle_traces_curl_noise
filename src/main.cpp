@@ -243,9 +243,9 @@ struct SApp : App {
 			);
 		gl::draw(walkerTex2, getWindowBounds());
 
-		/*auto mat = dlToMat(walkerTex2, 0);
-		mat.convertTo(mat, CV_8UC3, 255.0f);
-		mVideoWriter.write(mat);*/
+		auto mat = dlToMat(walkerTex2, 0);
+		//mat.convertTo(mat, CV_8UC3, 255.0f);
+		mVideoWriter.write(mat);
 	}
 	
 	static int matTypeFromTex(gl::TextureRef tex) {
@@ -258,10 +258,10 @@ struct SApp : App {
 
 	cv::Mat dlToMat(gl::TextureRef tex, int mipLevel) {
 		ivec2 sz = gl::Texture2d::calcMipLevelSize(mipLevel, tex->getWidth(), tex->getHeight());
-		cv::Mat data = cv::Mat(sz.y, sz.x, matTypeFromTex(tex));
+		cv::Mat data = cv::Mat(sz.y, sz.x, CV_8UC3);
 
 		bind(tex);
-		glGetTexImage(GL_TEXTURE_2D, mipLevel, GL_RGB, GL_FLOAT, data.data);
+		glGetTexImage(GL_TEXTURE_2D, mipLevel, GL_RGB, GL_UNSIGNED_BYTE, data.data);
 
 		return data;
 	}
