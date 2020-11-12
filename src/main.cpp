@@ -244,7 +244,6 @@ struct SApp : App {
 		gl::draw(walkerTex2, getWindowBounds());
 
 		auto mat = dlToMat(walkerTex2, 0);
-		//mat.convertTo(mat, CV_8UC3, 255.0f);
 		mVideoWriter.write(mat);
 	}
 	
